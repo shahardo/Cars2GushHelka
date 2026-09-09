@@ -111,26 +111,114 @@ values -- if you hit that, the fix is to adjust the field-name candidates in
 
 ### `spatial` -- fully offline, point-in-polygon against a local parcels layer
 
-Needs two things not included here:
+Needs a parcels GeoJSON layer and a `Geocoder` implementation, neither of
+which is included here -- see **Setting up offline mode** below for where
+to get them and how to wire one up. `shapely` is only imported lazily
+inside `resolvers/spatial.py`, so `pip install shapely` is only needed if
+you actually use this resolver.
 
-1. A parcels GeoJSON layer (polygons with `gush`/`helka` properties) -- e.g.
-   Israel's Survey/Mapping Authority (Mapi) cadastral layer, or an export
-   from GovMap.
-2. A `Geocoder` implementation (anything with
-   `geocode(address_text) -> (x, y) | None`, matching the parcels layer's
-   CRS -- typically ITM/EPSG:2039). No offline Israeli geocoder ships here;
-   wire up whatever you have.
+## Setting up offline mode
 
-`shapely` is only imported lazily inside `resolvers/spatial.py`, so
-`pip install shapely` is only needed if you actually use this resolver --
-the rest of the pipeline has zero extra dependencies.
+"Offline" here means no live network calls during the actual run --
+i.e. anything other than `--resolver govmap`. There are two paths, and
+which one to set up depends on what you already have access to.
+
+### Path 1: `crosswalk` -- if you have (or can get) any address/mikud → gush/helka table
+
+This is the lighter-weight path. You need exactly one file: a CSV in the
+format `cars2gushhelka/resolvers/crosswalk.py` documents (`match_method,
+semel_yishuv, street, house_number, mikud, gush, helka, sub_helka`).
+
+- It doesn't need to be complete -- rows with no crosswalk entry just fall
+  through to `settlement_centroid`/`failed` rather than breaking the run,
+  so a partial table (e.g. covering one municipality) is still useful.
+- No downloads, no extra Python packages.
+- If your source is an existing address→parcel table in some other shape
+  (a spreadsheet, a database export), the fastest route is usually a small
+  one-off script that reshapes it into the crosswalk CSV columns above,
+  rather than writing a new resolver.
+
+### Path 2: `spatial` -- fully self-contained, but more setup
+
+This is the "download things" path proper. You need three pieces:
+
+**1. `shapely`** (Python package):
+
+```bash
+pip install shapely
+```
+
+**2. A parcels layer** -- a GeoJSON `FeatureCollection` of parcel polygons
+with `gush`/`helka` properties. Sources, most-authoritative first:
+
+- **GovMap** (govmap.gov.il) -- has a layer-download tool covering the
+  cadastral (גושים/חלקות) layer; you pick an extent and export as
+  Shapefile/GeoJSON. Usually needs a free account. This is the same layer
+  the online `govmap` resolver queries, so it's the most trustworthy
+  source if you can get it.
+- **data.gov.il** -- search "גוש חלקה" / "cadastre" / "מקרקעין"; cadastral
+  datasets turn up there occasionally, coverage and freshness vary by
+  dataset.
+- **Israel Land Authority (רשות מקרקעי ישראל)** / Survey of Israel -- the
+  official custodians, worth going to directly if you need something more
+  authoritative than a GovMap export.
+
+  If you only need one region/settlement rather than nationwide coverage,
+  exporting just that extent from GovMap keeps the file small and setup
+  much simpler.
+
+  *(I can't hand you a working URL here -- this environment's egress
+  policy blocks both `govmap.gov.il` and `data.gov.il` outright, confirmed
+  by direct probe while building this pipeline, so I have no way to browse
+  and verify a current dataset link. Check those sites directly.)*
+
+If a Shapefile is all you can get, convert it once with `ogr2ogr` (from
+GDAL) or `geopandas`:
+
+```bash
+ogr2ogr -f GeoJSON parcels.geojson parcels.shp
+```
+
+**3. A geocoder** -- turns address text into (x, y) coordinates in the
+*same CRS as the parcels layer* (Israeli cadastral data is normally ITM /
+EPSG:2039). This is the harder piece; nothing ships in the repo for it.
+Options, roughly by effort:
+
+- **A bulk-geocoded lookup table** -- if you already have street+house →
+  coordinates for the addresses you care about, wrap a dict lookup as a
+  `Geocoder`. Zero new infrastructure.
+- **Self-hosted Nominatim over an OSM Israel/Palestine extract** --
+  download the extract from Geofabrik (~150-250MB), run Nominatim locally
+  (Docker + Postgres import, a few GB once built). The most complete
+  option, and fully offline once set up, but real infrastructure to stand
+  up.
+- **A lighter OSM-based lookup** (e.g. via `osmnx`) -- workable for
+  street-centroid-level geocoding with much less setup than a full
+  Nominatim install, at the cost of precision.
+
+Wire whichever one you pick into `Geocoder`'s one method:
 
 ```python
 from cars2gushhelka.resolvers.spatial import ParcelIndex, SpatialResolver, CallableGeocoder
 
+def my_geocode_fn(address_text: str):
+    ...  # -> (x, y) in ITM, or None
+    return x, y
+
 index = ParcelIndex("parcels.geojson")
 resolver = SpatialResolver(CallableGeocoder(my_geocode_fn), index)
 ```
+
+Then pass `resolver` wherever the CLI's `build_resolver()` would otherwise
+build one (the CLI itself only wires up `crosswalk` and `govmap` --
+`spatial` needs a real `Geocoder` instance, which can't be expressed on
+the command line, so drive it via `cli.run_resolve`/`run_aggregate`
+directly, or add a small wrapper script).
+
+**In practice**: unless you specifically need per-parcel precision
+everywhere, Path 1 is usually the pragmatic choice -- standing up
+Nominatim plus sourcing a nationwide parcels export is a real project on
+its own.
 
 ## Fuel/engine categories
 
