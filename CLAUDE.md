@@ -66,7 +66,16 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
 - Tests are fully offline (`tests/`, run via
   `python -m unittest discover -s tests`) and use `resolvers/crosswalk.py`
   or `resolvers/fake.py`, never a live resolver.
-- The resolve stage prints one line per newly-resolved row to stderr
-  (address fields processed + outcome) -- see `cli.py`'s
-  `_describe_address`/`_describe_resolution`. Keep this in sync with
-  `VehicleRow`'s/`RowResolution`'s fields if either changes shape.
+- The resolve stage prints one line per row to stderr (address fields
+  processed + outcome) -- see `cli.py`'s `_describe_address`/
+  `_describe_resolution`. Cache hits are marked `*** CACHE HIT ***` and
+  aren't numbered/counted; newly-resolved rows are numbered and count
+  toward `--limit`. Keep this in sync with `VehicleRow`'s/`RowResolution`'s
+  fields if either changes shape.
+- Tier-level cache entries (`tier_cache`, keyed by `ResolveQuery.cache_key`)
+  are negative-cached too: a resolver call that returns no match caches
+  that "no match" indefinitely (including across runs, since the cache is
+  on disk). A transient resolver failure that got cached as a false miss
+  will stay wrong until that key is cleared from `db/cache.sqlite` -- if a
+  resolver bug is suspected, verify against a fresh cache before concluding
+  the data itself doesn't resolve.

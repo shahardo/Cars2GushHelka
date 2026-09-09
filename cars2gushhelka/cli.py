@@ -72,7 +72,13 @@ def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary
     for row in iter_rows(input_path, on_error=_on_parse_error):
         seen += 1
         key = row_identity_key(row, use_secondary_address)
-        if cache.get_row(key) is not cache.MISS:
+        cached = cache.get_row(key)
+        if cached is not cache.MISS:
+            print(
+                f"line {row.line_no}: {_describe_address(row)} "
+                f"{_describe_resolution(cached)} *** CACHE HIT ***",
+                file=sys.stderr,
+            )
             continue
         resolution = resolve_row(row, resolver, cache=cache, use_secondary_address=use_secondary_address)
         cache.set_row(key, resolution)

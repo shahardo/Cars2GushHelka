@@ -78,11 +78,14 @@ Key flags:
 - `--limit N` -- resolve at most N new distinct addresses (useful to test a
   resolver cheaply before a full run).
 
-During the resolve stage, each newly-resolved (non-cached) row prints one
-line to stderr with the address fields it processed and the outcome, e.g.:
+During the resolve stage, every row prints one line to stderr with the
+address fields it processed and the outcome -- newly-resolved rows are
+numbered, and rows already answered by the cache (a previous run, or an
+earlier row with the identical address) are marked `*** CACHE HIT ***`:
 
 ```
 [5] line 6: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80)
+line 7: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80) *** CACHE HIT ***
 ```
 
 Output: `gush_helka_by_engine.csv` (one row per gush/helka; UTF-8 with BOM
@@ -107,6 +110,14 @@ internally:
 
 1. `POST /api/search-service/autocomplete` -- geocode the free-text address
    (`street house_number settlement`) to an EPSG:3857 (Web Mercator) point.
+   Tiers A-C search with `filterType: "address"` and match `type: "address"`
+   results; the `settlement_centroid` tier searches with
+   `filterType: "settlement"` and matches `type: "settlement"` instead --
+   GovMap indexes a settlement's centroid (its `SETL_MID_POINT` layer) as a
+   separate result type from individual street/house records, and many
+   small settlements have no literal `"address"` entry matching just their
+   own name, so searching with the wrong filter silently finds nothing for
+   them.
 2. `GET /api/layers-catalog/apps/parcel-search/address?x=&y=` -- look up the
    gush/helka containing that point (server-side point-in-parcel, no local
    CRS reprojection needed).
@@ -271,6 +282,12 @@ that checks the reconciliation invariant and the tier distribution.
 - The `govmap` resolver depends on undocumented, reverse-engineered GovMap
   endpoints (see above) that could change without notice -- test it with
   `--limit 20` before a full run.
+- The `govmap` resolver's parcel-search layer has no cadastral coverage for
+  some Judea-and-Samaria (West Bank) settlements (e.g. אלפי מנשה, בית אריה)
+  -- geocoding finds the settlement/address fine, but the parcel lookup
+  returns no polygon even at the exact settlement centroid, so those rows
+  correctly end up `failed` rather than a wrong answer. This is a gap in
+  GovMap's own data, not a bug in this resolver.
 - `is_mikud_specific` (mikud not ending in `"00"`) is a heuristic derived
   from the sample, not a documented rule -- it can have false negatives
   (some real building-level mikudim happen to end in `"00"`) but the

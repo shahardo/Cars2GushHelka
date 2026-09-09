@@ -91,17 +91,17 @@ def _http_post_json(url: str, body: dict, *, timeout: float, retries: int, backo
     return _http_request_json(url, method="POST", data=data, timeout=timeout, retries=retries, backoff=backoff)
 
 
-def _extract_coords(payload: Optional[dict]) -> Optional[tuple]:
-    """Pull (x, y) EPSG:3857 coordinates out of the top address-type search
+def _extract_coords(payload: Optional[dict], result_type: str) -> Optional[tuple]:
+    """Pull (x, y) EPSG:3857 coordinates out of the top matching-type search
     result. Fails loudly (returns None) rather than guessing if the search
-    turned up nothing address-shaped."""
+    turned up nothing of that shape."""
     if payload is None:
         return None
     results = payload.get("results")
     if not isinstance(results, list):
         return None
     for item in results:
-        if not isinstance(item, dict) or item.get("type") != "address":
+        if not isinstance(item, dict) or item.get("type") != result_type:
             continue
         shape = item.get("shape")
         if not isinstance(shape, str):
@@ -174,7 +174,7 @@ class GovMapResolver:
             time.sleep(self.rate_limit_seconds - elapsed)
         self._last_call = time.monotonic()
 
-    def _geocode(self, address_text: str) -> Optional[tuple]:
+    def _geocode(self, address_text: str, *, result_type: str = "address") -> Optional[tuple]:
         if not address_text:
             return None
         self._throttle()
@@ -185,11 +185,11 @@ class GovMapResolver:
                 "language": "he",
                 "isAccurate": False,
                 "maxResults": 5,
-                "filterType": "address",
+                "filterType": result_type,
             },
             timeout=self.timeout, retries=self.retries, backoff=self.backoff,
         )
-        return _extract_coords(payload)
+        return _extract_coords(payload, result_type)
 
     def _identify(self, x: float, y: float) -> Optional[ResolvedParcel]:
         self._throttle()
@@ -202,7 +202,14 @@ class GovMapResolver:
 
     def resolve(self, query: ResolveQuery) -> Optional[ResolvedParcel]:
         address_text = _address_text(query)
-        coords = self._geocode(address_text)
+        # GovMap indexes settlement centroids as their own result type (its
+        # "SETL_MID_POINT" layer), separate from individual street/house
+        # "address" records -- searching a bare settlement name with
+        # filterType="address" finds nothing for settlements that have no
+        # literal address entry matching just their own name (e.g. small
+        # villages), so this tier must search/match type "settlement" instead.
+        result_type = "settlement" if query.method is MatchMethod.SETTLEMENT_CENTROID else "address"
+        coords = self._geocode(address_text, result_type=result_type)
         if coords is None:
             return None
         x, y = coords
