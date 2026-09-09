@@ -46,6 +46,26 @@ def build_resolver(args: argparse.Namespace):
     raise SystemExit(f"unknown resolver: {args.resolver!r}")
 
 
+def _describe_address(row) -> str:
+    fields = [
+        ("settlement", row.shem_yishuv),
+        ("street", row.rechov),
+        ("house", row.mispar_bait),
+        ("mikud", row.mikud),
+    ]
+    return " ".join(f"{name}={value!r}" for name, value in fields if value.strip())
+
+
+def _describe_resolution(resolution: RowResolution) -> str:
+    if resolution.match_method == "failed":
+        return f"-> FAILED (bucket={resolution.helka})"
+    secondary = " [secondary address]" if resolution.used_secondary_address else ""
+    return (
+        f"-> gush={resolution.gush} helka={resolution.helka} "
+        f"(method={resolution.match_method}, confidence={resolution.confidence:.2f}){secondary}"
+    )
+
+
 def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary_address: bool = True, limit: Optional[int] = None) -> int:
     resolved_count = 0
     seen = 0
@@ -57,6 +77,11 @@ def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary
         resolution = resolve_row(row, resolver, cache=cache, use_secondary_address=use_secondary_address)
         cache.set_row(key, resolution)
         resolved_count += 1
+        print(
+            f"[{resolved_count}] line {row.line_no}: {_describe_address(row)} "
+            f"{_describe_resolution(resolution)}",
+            file=sys.stderr,
+        )
         if limit is not None and resolved_count >= limit:
             break
     cache.flush()
@@ -103,7 +128,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="cars2gushhelka", description=__doc__)
     p.add_argument("--input", required=True, help="Ministry of Energy pipe-delimited vehicle file")
     p.add_argument("--resolver", choices=["govmap", "spatial", "crosswalk"], default="crosswalk")
-    p.add_argument("--cache", default="cache.sqlite", help="SQLite cache path (resumable)")
+    p.add_argument("--cache", default="db/cache.sqlite", help="SQLite cache path (resumable)")
     p.add_argument("--output", default="gush_helka_by_engine.csv")
     p.add_argument("--unresolved-output", default="unresolved_report.csv")
     p.add_argument("--crosswalk", help="CSV crosswalk path (--resolver crosswalk)")
@@ -123,6 +148,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    # Hebrew address fields in the per-row printouts otherwise come out as
+    # \uXXXX escapes on a Windows console/pipe stuck on its legacy codepage.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+
     args = build_arg_parser().parse_args(argv)
     if args.resolve_only and args.aggregate_only:
         raise SystemExit("--resolve-only and --aggregate-only are mutually exclusive")

@@ -3,3 +3,7 @@ __pycache__/
 *.sqlite
 *.sqlite-*
 .pytest_cache/
+
+/* data files */
+gush_helka_by_engine.csv
+unresolved_report.csv

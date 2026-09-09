@@ -55,7 +55,7 @@ python -m cars2gushhelka \
   --input ministry_of_energy.txt \
   --resolver crosswalk \
   --crosswalk my_crosswalk.csv \
-  --cache cache.sqlite \
+  --cache db/cache.sqlite \
   --output gush_helka_by_engine.csv
 ```
 
@@ -63,7 +63,8 @@ Key flags:
 
 - `--resolver {crosswalk,govmap,spatial}` -- which backend resolves an
   address to a gush/helka (see below).
-- `--cache PATH` -- SQLite cache (default `cache.sqlite`). **Resumable**:
+- `--cache PATH` -- SQLite cache (default `db/cache.sqlite`, directory created
+  automatically). **Resumable**:
   re-running only resolves addresses not already cached, so an interrupted
   run (or a long govmap resolve) can be safely restarted.
 - `--resolve-only` / `--aggregate-only` -- run the two stages separately, so
@@ -76,6 +77,13 @@ Key flags:
   mapping (`{"<code-or-name>": "<category>"}`).
 - `--limit N` -- resolve at most N new distinct addresses (useful to test a
   resolver cheaply before a full run).
+
+During the resolve stage, each newly-resolved (non-cached) row prints one
+line to stderr with the address fields it processed and the outcome, e.g.:
+
+```
+[5] line 6: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80)
+```
 
 Output: `gush_helka_by_engine.csv` (one row per gush/helka; UTF-8 with BOM
 for Excel) and `unresolved_report.csv` (the Tier-E long tail, so it's
@@ -91,23 +99,40 @@ You supply a CSV mapping address/mikud/settlement → gush/helka. See
 what the test suite uses, and it's the right choice if you already have (or
 can obtain) a gush/helka reference table.
 
-### `govmap` -- online, via the (unofficial) GovMap search API
+### `govmap` -- online, via the (unofficial) GovMap portal API
 
-**This backend could not be exercised while writing it**: this session's
-network egress policy blocks `es.govmap.gov.il` / `ags.govmap.gov.il`
-(confirmed by direct probe -- 403 at the proxy). It's written against
-GovMap's publicly documented request/response shapes with defensive parsing
-and retry/backoff, but **you must validate it against the live API** before
-relying on it:
+Verified working against the live API (`www.govmap.gov.il`) as of writing.
+Two-step flow per address, matching what the GovMap portal's own UI does
+internally:
+
+1. `POST /api/search-service/autocomplete` -- geocode the free-text address
+   (`street house_number settlement`) to an EPSG:3857 (Web Mercator) point.
+2. `GET /api/layers-catalog/apps/parcel-search/address?x=&y=` -- look up the
+   gush/helka containing that point (server-side point-in-parcel, no local
+   CRS reprojection needed).
+
+Try it with a small batch before a full run:
 
 ```bash
 python -m cars2gushhelka --input file.txt --resolver govmap --limit 20
 ```
 
-If GovMap's response shape has drifted, this fails loudly
-(`GovMapResponseError`) rather than silently returning wrong gush/helka
-values -- if you hit that, the fix is to adjust the field-name candidates in
-`resolvers/govmap.py`'s `_extract_coords`/`_extract_parcel`.
+Two things worth knowing:
+
+- **It's reverse-engineered, not documented.** These endpoints were
+  recovered by reading network calls out of the live portal's JS bundle,
+  not from published API docs (GovMap does publish an official
+  `api.govmap.gov.il` product, but that one requires a registered API token
+  and drives an embedded JS map rather than plain HTTP calls). GovMap could
+  change this backend again without notice -- if it does, this fails loudly
+  (`GovMapResponseError`) rather than silently returning wrong gush/helka
+  values; the fix is to re-derive the current endpoint/shape and adjust
+  `resolvers/govmap.py`'s `_extract_coords`/`_extract_parcel`.
+- **TLS quirk:** `www.govmap.gov.il` only offers a legacy, non-forward-secret
+  TLS 1.2 cipher suite. Python's default `SSLContext` refuses it at its
+  default security level even though curl/browsers connect fine, so
+  `resolvers/govmap.py` connects with `SECLEVEL=1` explicitly (certificate
+  verification stays on).
 
 ### `spatial` -- fully offline, point-in-polygon against a local parcels layer
 
@@ -166,11 +191,6 @@ with `gush`/`helka` properties. Sources, most-authoritative first:
   If you only need one region/settlement rather than nationwide coverage,
   exporting just that extent from GovMap keeps the file small and setup
   much simpler.
-
-  *(I can't hand you a working URL here -- this environment's egress
-  policy blocks both `govmap.gov.il` and `data.gov.il` outright, confirmed
-  by direct probe while building this pipeline, so I have no way to browse
-  and verify a current dataset link. Check those sites directly.)*
 
 If a Shapefile is all you can get, convert it once with `ogr2ogr` (from
 GDAL) or `geopandas`:
@@ -248,8 +268,9 @@ that checks the reconciliation invariant and the tier distribution.
   on without better source addresses. Those rows are always flagged
   `is_aggregated=true` so they're never confused with a genuine per-parcel
   match.
-- The `govmap` resolver is unverified against the live API in this
-  environment (see above) -- test it with `--limit 20` before a full run.
+- The `govmap` resolver depends on undocumented, reverse-engineered GovMap
+  endpoints (see above) that could change without notice -- test it with
+  `--limit 20` before a full run.
 - `is_mikud_specific` (mikud not ending in `"00"`) is a heuristic derived
   from the sample, not a documented rule -- it can have false negatives
   (some real building-level mikudim happen to end in `"00"`) but the

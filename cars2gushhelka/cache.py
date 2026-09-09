@@ -17,6 +17,7 @@ already present.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from typing import Optional
 
@@ -53,6 +54,9 @@ class AddressCache:
     MISS = MISS
 
     def __init__(self, path: str, *, commit_every: int = 500):
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         self.conn = sqlite3.connect(path)
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.executescript(_SCHEMA)
