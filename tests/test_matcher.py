@@ -201,6 +201,24 @@ class SecondaryAddressTests(unittest.TestCase):
         self.assertEqual(cand.semel_yishuv, "6400")
         self.assertEqual(cand.settlement_name, "")
 
+    def test_secondary_address_used_by_default_without_passing_the_flag(self):
+        # use_secondary_address defaults to True -- callers must opt OUT.
+        row = make_row(rechov_nosaf="שדרות ההדרים", mispar_bait_nosaf="7")
+        resolver = FakeResolver({
+            street_house_key("249", "שדרות ההדרים", "7"): PARCEL_A,
+        })
+        res = resolve_row(row, resolver)  # no use_secondary_address kwarg
+        self.assertTrue(res.used_secondary_address)
+
+    def test_secondary_address_disabled_with_explicit_false(self):
+        row = make_row(rechov_nosaf="שדרות ההדרים", mispar_bait_nosaf="7")
+        resolver = FakeResolver({
+            street_house_key("249", "שדרות ההדרים", "7"): PARCEL_A,
+        })
+        res = resolve_row(row, resolver, use_secondary_address=False)
+        self.assertEqual(res.match_method, "failed")
+        self.assertFalse(res.used_secondary_address)
+
 
 class CachingTests(unittest.TestCase):
     def test_repeat_query_hits_cache_not_resolver(self):

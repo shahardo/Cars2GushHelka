@@ -33,10 +33,10 @@ Tried in this order, first success wins:
 | D | `settlement_centroid` | rural / nothing usable -- **flagged `is_aggregated=true`** |
 | E | `failed` | nothing resolved at all -- bucketed as `FAILED:<settlement>` |
 
-If `--use-secondary-address` is passed, tiers A-C are retried on the
-secondary (`*_nosaf`) address before falling back to D/E, and every row
-resolved that way is flagged (`via_secondary_address` column + printed
-summary line).
+By default (disable with `--no-secondary-address`), if all three primary-address
+tiers fail, A-C are retried on the secondary (`*_nosaf`) address before
+falling back to D/E, and every row resolved that way is flagged
+(`via_secondary_address` column + printed summary line).
 
 **Core invariant, checked on every run:** the sum of every engine-type cell
 across the whole output always equals the number of input vehicle rows.
@@ -56,8 +56,7 @@ python -m cars2gushhelka \
   --resolver crosswalk \
   --crosswalk my_crosswalk.csv \
   --cache cache.sqlite \
-  --output gush_helka_by_engine.csv \
-  --use-secondary-address
+  --output gush_helka_by_engine.csv
 ```
 
 Key flags:
@@ -70,8 +69,9 @@ Key flags:
 - `--resolve-only` / `--aggregate-only` -- run the two stages separately, so
   a long network resolve doesn't need to be redone just to change the fuel
   map or re-run aggregation.
-- `--use-secondary-address` -- fall back to the `*_nosaf` address when the
-  primary address doesn't resolve.
+- `--no-secondary-address` -- disable falling back to the `*_nosaf` address
+  when the primary address doesn't resolve (the fallback is **on by
+  default**).
 - `--fuel-map map.json` -- override/extend the fuel code/name → category
   mapping (`{"<code-or-name>": "<category>"}`).
 - `--limit N` -- resolve at most N new distinct addresses (useful to test a

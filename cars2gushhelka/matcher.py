@@ -9,8 +9,9 @@ Tier order (first success wins), per the plan:
     E. failed                -- resolver had no answer at all
 
 A/B/C are tried on the primary address first. If all three fail and
-`use_secondary_address` is set, the same three tiers are retried on the
-secondary (*_nosaf) address before falling back to D/E.
+`use_secondary_address` is set (the default -- pass False to disable), the
+same three tiers are retried on the secondary (*_nosaf) address before
+falling back to D/E.
 """
 
 from __future__ import annotations
@@ -165,7 +166,7 @@ def resolve_row(
     resolver: Resolver,
     *,
     cache=None,
-    use_secondary_address: bool = False,
+    use_secondary_address: bool = True,
 ) -> RowResolution:
     primary = primary_candidate(row)
     settlement_code = clean_text(row.semel_yishuv)

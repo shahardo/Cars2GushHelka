@@ -46,7 +46,7 @@ def build_resolver(args: argparse.Namespace):
     raise SystemExit(f"unknown resolver: {args.resolver!r}")
 
 
-def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary_address: bool, limit: Optional[int] = None) -> int:
+def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary_address: bool = True, limit: Optional[int] = None) -> int:
     resolved_count = 0
     seen = 0
     for row in iter_rows(input_path, on_error=_on_parse_error):
@@ -68,7 +68,7 @@ def run_aggregate(
     input_path: str,
     cache: AddressCache,
     *,
-    use_secondary_address: bool,
+    use_secondary_address: bool = True,
     fuel_overrides: Optional[dict] = None,
 ) -> Aggregator:
     aggregator = Aggregator()
@@ -109,7 +109,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--crosswalk", help="CSV crosswalk path (--resolver crosswalk)")
     p.add_argument("--parcels", help="GeoJSON parcels layer path (--resolver spatial)")
     p.add_argument("--fuel-map", help="JSON override for fuel code/name -> category")
-    p.add_argument("--use-secondary-address", action="store_true", help="Fall back to *_nosaf address when primary fails")
+    p.add_argument(
+        "--no-secondary-address", dest="use_secondary_address", action="store_false",
+        help="Disable falling back to the *_nosaf address when the primary address fails to resolve "
+             "(the fallback is used by default)",
+    )
+    p.set_defaults(use_secondary_address=True)
     p.add_argument("--resolve-only", action="store_true")
     p.add_argument("--aggregate-only", action="store_true")
     p.add_argument("--limit", type=int, default=None, help="Stop after resolving N new distinct addresses")
