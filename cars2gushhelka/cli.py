@@ -47,10 +47,17 @@ def build_resolver(args: argparse.Namespace):
     raise SystemExit(f"unknown resolver: {args.resolver!r}")
 
 
+def _rtl_display(text: str) -> str:
+    # Terminals print left-to-right without bidi reordering, so Hebrew text
+    # comes out reversed-looking; flipping character order here makes it
+    # read correctly (RTL) in the trace printout.
+    return text[::-1]
+
+
 def _describe_address(row) -> str:
     fields = [
-        ("settlement", row.shem_yishuv),
-        ("street", row.rechov),
+        ("settlement", _rtl_display(row.shem_yishuv)),
+        ("street", _rtl_display(row.rechov)),
         ("house", row.mispar_bait),
         ("mikud", row.mikud),
     ]

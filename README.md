@@ -92,7 +92,11 @@ numbered, and rows already answered by the cache (a previous run, or an
 earlier row with the identical address) are marked `*** CACHE HIT ***`.
 Each line also reports the running average of rows processed per minute
 (a timer starts when the resolve stage begins), so you can gauge how long
-a large run will take:
+a large run will take. The `settlement`/`street` values in this printout
+have their character order reversed before printing -- most terminals
+print left-to-right without bidi reordering, so raw Hebrew text would
+otherwise look reversed; flipping it makes it read correctly (RTL) in the
+printout. This only affects the trace output, not any file or CSV:
 
 ```
 [5] line 6: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80) (avg 42.3 lines/min)

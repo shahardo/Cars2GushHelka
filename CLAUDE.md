@@ -71,7 +71,11 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   `_describe_resolution`. Cache hits are marked `*** CACHE HIT ***` and
   aren't numbered/counted; newly-resolved rows are numbered and count
   toward `--limit`. Keep this in sync with `VehicleRow`'s/`RowResolution`'s
-  fields if either changes shape.
+  fields if either changes shape. `_describe_address` reverses the
+  `settlement`/`street` field values (via `_rtl_display`) before printing,
+  since a terminal without bidi reordering would otherwise render Hebrew
+  text backwards -- this is purely a display transform for the stderr
+  trace, not applied anywhere data is stored or written to a file.
 - Each printed line also appends the running average rows/minute, computed
   by `run_resolve`'s local `_rate()` helper from a `time.monotonic()`
   timer started at the top of the function and the `seen` row count
