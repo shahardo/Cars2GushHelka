@@ -85,11 +85,14 @@ Key flags:
 During the resolve stage, every row prints one line to stderr with the
 address fields it processed and the outcome -- newly-resolved rows are
 numbered, and rows already answered by the cache (a previous run, or an
-earlier row with the identical address) are marked `*** CACHE HIT ***`:
+earlier row with the identical address) are marked `*** CACHE HIT ***`.
+Each line also reports the running average of rows processed per minute
+(a timer starts when the resolve stage begins), so you can gauge how long
+a large run will take:
 
 ```
-[5] line 6: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80)
-line 7: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80) *** CACHE HIT ***
+[5] line 6: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80) (avg 42.3 lines/min)
+line 7: settlement='פרדס חנה-כרכור' street='המושב' house='64' mikud='3706964' -> gush=10074 helka=77 (method=street_house, confidence=0.80) *** CACHE HIT *** (avg 43.1 lines/min)
 ```
 
 Output: `gush_helka_by_engine.csv` (one row per gush/helka; UTF-8 with BOM

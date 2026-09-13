@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from typing import Optional
 
 from . import fuel, report
@@ -69,6 +70,13 @@ def _describe_resolution(resolution: RowResolution) -> str:
 def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary_address: bool = True, limit: Optional[int] = None) -> int:
     resolved_count = 0
     seen = 0
+    start_time = time.monotonic()
+
+    def _rate() -> str:
+        elapsed_minutes = (time.monotonic() - start_time) / 60.0
+        lines_per_minute = seen / elapsed_minutes if elapsed_minutes > 0 else 0.0
+        return f"avg {lines_per_minute:.1f} lines/min"
+
     try:
         for row in iter_rows(input_path, on_error=_on_parse_error):
             seen += 1
@@ -77,7 +85,7 @@ def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary
             if cached is not cache.MISS:
                 print(
                     f"line {row.line_no}: {_describe_address(row)} "
-                    f"{_describe_resolution(cached)} *** CACHE HIT ***",
+                    f"{_describe_resolution(cached)} *** CACHE HIT *** ({_rate()})",
                     file=sys.stderr,
                 )
                 continue
@@ -86,7 +94,7 @@ def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary
             resolved_count += 1
             print(
                 f"[{resolved_count}] line {row.line_no}: {_describe_address(row)} "
-                f"{_describe_resolution(resolution)}",
+                f"{_describe_resolution(resolution)} ({_rate()})",
                 file=sys.stderr,
             )
             if limit is not None and resolved_count >= limit:

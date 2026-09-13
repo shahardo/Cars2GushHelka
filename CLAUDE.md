@@ -72,6 +72,10 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   aren't numbered/counted; newly-resolved rows are numbered and count
   toward `--limit`. Keep this in sync with `VehicleRow`'s/`RowResolution`'s
   fields if either changes shape.
+- Each printed line also appends the running average rows/minute, computed
+  by `run_resolve`'s local `_rate()` helper from a `time.monotonic()`
+  timer started at the top of the function and the `seen` row count
+  (cache hits and newly-resolved rows both count toward it).
 - Tier-level cache entries (`tier_cache`, keyed by `ResolveQuery.cache_key`)
   are negative-cached too: a resolver call that returns no match caches
   that "no match" indefinitely (including across runs, since the cache is
