@@ -208,6 +208,35 @@ class FixtureCrosswalkTest(unittest.TestCase):
             resolved = run_resolve(self.input_path, ExplodingResolver(), cache, use_secondary_address=True)
         self.assertEqual(resolved, 0)
 
+    def test_resolve_saves_progress_before_reraising_on_communication_error(self):
+        # A resolver that fails partway through (e.g. a dropped connection)
+        # must not lose rows already resolved before the failure -- they
+        # need to be committed to the cache so a rerun resumes instead of
+        # starting over.
+        real_resolver = CrosswalkResolver.from_csv(self.crosswalk_path)
+
+        class FlakyResolver:
+            def __init__(self):
+                self.calls = 0
+
+            def resolve(self, query):
+                self.calls += 1
+                if self.calls > 2:
+                    raise ConnectionError("simulated network failure")
+                return real_resolver.resolve(query)
+
+        with AddressCache(self.cache_path) as cache:
+            with self.assertRaises(ConnectionError):
+                run_resolve(self.input_path, FlakyResolver(), cache, use_secondary_address=True)
+
+        # Progress made before the failure was flushed to disk -- rerunning
+        # with a working resolver picks up where it left off and reaches a
+        # fully-reconciled result, without the flaky resolver being needed again.
+        with AddressCache(self.cache_path) as cache:
+            run_resolve(self.input_path, real_resolver, cache, use_secondary_address=True)
+            agg = run_aggregate(self.input_path, cache, use_secondary_address=True)
+        self.assertEqual(agg.total_rows, 7)
+
 
 def _all_candidate_queries(cand):
     """Independently mirrors the tier-A/B/C query shapes a full-coverage

@@ -66,7 +66,11 @@ Key flags:
 - `--cache PATH` -- SQLite cache (default `db/cache.sqlite`, directory created
   automatically). **Resumable**:
   re-running only resolves addresses not already cached, so an interrupted
-  run (or a long govmap resolve) can be safely restarted.
+  run (or a long govmap resolve) can be safely restarted. If the resolve
+  stage hits an error (a network/communication error, Ctrl+C, ...) it
+  flushes whatever was resolved so far to the cache and prints how much
+  progress was made before the error propagates -- just rerun the same
+  command to pick up where it left off.
 - `--resolve-only` / `--aggregate-only` -- run the two stages separately, so
   a long network resolve doesn't need to be redone just to change the fuel
   map or re-run aggregation.

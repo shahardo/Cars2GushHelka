@@ -79,3 +79,11 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   will stay wrong until that key is cleared from `db/cache.sqlite` -- if a
   resolver bug is suspected, verify against a fresh cache before concluding
   the data itself doesn't resolve.
+- `cli.py`'s `run_resolve` wraps its row loop in `try/except (Exception,
+  KeyboardInterrupt)`: on any error (a resolver's `GovMapResponseError`
+  after retries are exhausted, a dropped connection, Ctrl+C, ...) it
+  flushes the cache, prints how much progress was made and that rerunning
+  the same command resumes, then re-raises so the real traceback/exit code
+  is preserved. Resolvers should keep failing loudly (raise, don't guess)
+  -- this catch only makes the *CLI's* response to that graceful, it
+  doesn't change resolver behavior.

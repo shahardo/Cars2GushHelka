@@ -54,6 +54,7 @@ class AddressCache:
     MISS = MISS
 
     def __init__(self, path: str, *, commit_every: int = 500):
+        self.path = path
         parent = os.path.dirname(path)
         if parent:
             os.makedirs(parent, exist_ok=True)
