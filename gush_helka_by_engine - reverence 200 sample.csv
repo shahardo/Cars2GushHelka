@@ -1,0 +1,180 @@
+﻿gush,helka,sub_helka,settlement_code,settlement_name,is_aggregated,match_method,confidence,gasoline,diesel,kerosene,total,via_secondary_address
+10009,425,,6500,חדרה,false,street_house,0.80,1,0,0,1,0
+100424,257,,666,עומר,false,street_house,0.80,1,0,0,1,0
+10074,77,,7800,פרדס חנה-כרכור,false,street_house,0.80,1,0,0,1,0
+10102,261,,7800,פרדס חנה-כרכור,false,street_house,0.80,1,0,0,1,0
+10105,442,,7800,פרדס חנה-כרכור,false,street_house,0.80,1,0,0,1,0
+10600,137,,2300,קרית טבעון,false,street_house,0.80,1,0,0,1,0
+10679,77,,2100,טירת כרמל,false,street_house,0.80,1,0,0,1,0
+10764,26,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+10768,13,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+10802,175,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+11038,110,,6800,קרית אתא,false,street_house,0.80,1,0,0,1,0
+11038,111,,6800,קרית אתא,false,street_house,0.80,1,0,0,1,0
+11274,24,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+11306,36,,9300,זכרון יעקב,false,street_house,0.80,1,0,0,1,0
+11534,171,,9500,קרית ביאליק,false,street_house,0.80,1,0,0,1,0
+11560,72,,9500,קרית ביאליק,false,street_house,0.80,1,0,0,1,0
+11565,11,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+11565,118,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+11567,266,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+11567,400,,422,חרב לאת,false,street_house,0.80,0,1,0,1,0
+11576,34,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+11779,56,,3000,ירושלים,false,street_house,0.80,1,0,0,1,0
+12417,21,,6800,קרית אתא,false,street_house,0.80,1,0,0,1,0
+12494,23,,4000,חיפה,false,street_house,0.80,1,0,0,1,0
+12783,82,,7800,פרדס חנה-כרכור,false,street_house,0.80,1,0,0,1,0
+13213,34,,43,מטולה,false,street_house,0.80,1,0,0,1,0
+13214,89,,43,מטולה,false,street_house,0.80,1,0,0,1,0
+13946,79,,26,ראש פינה,false,street_house,0.80,0,1,0,1,0
+16532,78,,7300,נצרת,false,street_house,0.80,1,0,0,1,0
+16543,5,,7300,נצרת,false,street_house,0.80,1,0,0,1,0
+16578,4,,7300,נצרת,false,street_house,0.80,1,0,0,1,0
+17511,27,,7300,נצרת,false,street_house,0.80,1,0,0,1,0
+17581,105,,534,עספיא,false,street_house,0.80,0,1,0,1,0
+17832,87,,1061,נוף הגליל,false,street_house,0.80,1,0,0,1,0
+18402,1,,1063,מעלות-תרשיחא,false,street_house,0.80,1,0,0,1,0
+18877,27,,3000,ירושלים,false,street_only,0.80,1,0,0,1,1
+19042,32,,1221,צורית,false,street_house,0.80,1,0,0,1,0
+19735,179,,1201,כמון,false,street_house,0.80,1,0,0,1,0
+21076,91,,1263,כפר ורדים,false,street_house,0.80,1,0,0,1,0
+2648,47,,70,אשדוד,false,street_house,0.80,1,0,0,1,0
+2906,20,,2008,שדה יצחק,false,street_house,0.80,1,0,0,1,0
+30023,146,,3000,ירושלים,false,street_house,0.80,1,0,0,1,0
+30316,207,,208,מוצא עילית,false,street_house,0.80,1,0,0,1,0
+30682,68,,1015,מבשרת ציון,false,street_house,0.80,1,0,0,1,0
+30688,26,,3000,ירושלים,false,street_house,0.80,1,0,0,1,0
+3697,420,,8400,רחובות,false,street_house,0.80,1,0,0,1,0
+3702,145,,8400,רחובות,false,street_house,0.80,1,0,0,1,0
+3816,146,,8400,רחובות,false,street_house,0.80,0,1,0,1,0
+38228,90,,2560,ערד,false,street_house,0.80,2,0,0,2,0
+3846,68,,7200,נס ציונה,false,street_house,0.80,1,0,0,1,0
+3850,126,,7200,נס ציונה,false,street_house,0.80,1,0,0,1,0
+38576,30,,666,עומר,false,street_house,0.80,1,0,0,1,0
+3899,179,,28,מזכרת בתיה,false,street_house,0.80,1,0,0,1,0
+3930,131,,8300,ראשון לציון,false,street_house,0.80,1,0,0,1,0
+3939,298,,8300,ראשון לציון,false,street_house,0.80,1,0,0,1,0
+40011,6,,2600,אילת,false,street_house,0.80,1,0,0,1,0
+40050,200,,2600,אילת,false,street_house,0.80,1,0,0,1,0
+4049,104,,249,כפר סירקין,false,street_house,0.80,1,0,0,1,0
+4050,62,,249,כפר סירקין,false,street_house,0.80,1,0,0,1,0
+4243,249,,8300,ראשון לציון,false,street_house,0.80,1,0,0,1,0
+4247,183,,8300,ראשון לציון,false,street_house,0.80,1,0,0,1,0
+4349,402,,8500,רמלה,false,street_house,0.80,1,0,0,1,0
+4575,38,,2550,גדרה,false,street_house,0.80,1,0,0,1,0
+4718,55,,562,בית אלעזרי,false,street_house,0.80,0,1,0,1,0
+5100,20,,469,קרית עקרון,false,street_house,0.80,1,0,0,1,0
+5298,38,,1200,מודיעין-מכבים-רעות,false,street_house,0.80,1,0,0,1,0
+5490,306,,2640,ראש העין,false,street_house,0.80,1,0,0,1,0
+5611,58,,2640,ראש העין,false,street_house,0.80,1,0,0,1,0
+564,148,,166,גן יבנה,false,street_house,0.80,1,0,0,1,0
+5988,13,,1050,בית חשמונאי,false,street_house,0.80,1,0,0,1,0
+6021,222,,6600,חולון,false,street_house,0.80,1,0,0,1,0
+6125,462,,8600,רמת גן,false,street_house,0.80,1,0,0,1,0
+6125,87,,8600,רמת גן,false,street_house,0.80,1,0,0,1,0
+6143,359,,8600,רמת גן,false,street_house,0.80,2,0,0,2,0
+6180,627,,8600,רמת גן,false,street_house,0.80,1,0,0,1,0
+6187,429,,8600,רמת גן,false,street_house,0.80,2,0,0,2,0
+6189,936,,681,גבעת שמואל,false,street_house,0.80,1,0,0,1,0
+6191,8,,7900,פתח תקווה,false,street_house,0.80,1,0,0,1,0
+6214,194,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+6215,105,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+6414,107,,2650,רמת השרון,false,street_house,0.80,1,0,0,1,0
+6428,307,,6900,כפר סבא,false,street_house,0.80,1,0,0,1,0
+6428,435,,6900,כפר סבא,false,street_house,0.80,1,0,0,1,0
+6431,181,,6900,כפר סבא,false,street_house,0.80,1,0,0,1,0
+6444,69,,9700,הוד השרון,false,street_house,0.80,0,1,0,1,0
+6449,59,,218,גני עם,false,street_house,0.80,0,0,1,1,0
+6452,434,,206,רמות השבים,false,street_house,0.80,1,0,0,1,0
+6455,640,,9700,הוד השרון,false,street_house,0.80,0,1,0,1,0
+6492,17,,2620,קרית אונו,false,street_house,0.80,1,0,0,1,0
+6498,291,,587,סביון,false,street_house,0.80,1,0,0,1,0
+6524,88,,6400,הרצליה,false,street_house,0.80,1,0,0,1,0
+6558,414,,6400,הרצליה,false,street_house,0.80,1,0,0,1,0
+6587,103,,8700,רעננה,false,street_house,0.80,0,1,0,1,0
+6624,322,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+6631,127,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+6694,324,,9400,יהוד-מונוסון,false,street_house,0.80,1,0,0,1,0
+6714,178,,7900,פתח תקווה,false,street_house,0.80,1,0,0,1,0
+6722,102,,587,סביון,false,street_house,0.80,1,0,0,1,0
+6795,50,,729,משמר השבעה,false,street_house,0.80,0,1,0,1,0
+6824,125,,8300,ראשון לציון,false,street_house,0.80,1,0,0,1,0
+6866,19,,6600,חולון,false,street_house,0.80,1,0,0,1,0
+6910,54,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+6978,2,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+7092,29,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+7116,27,,5000,תל אביב - יפו,false,street_house,0.80,1,0,0,1,0
+7131,94,,6200,בת ים,false,street_house,0.80,1,0,0,1,0
+7195,8,,9300,זכרון יעקב,false,street_house,0.80,0,1,0,1,0
+7208,9,,666,עומר,false,street_house,0.80,1,0,0,1,0
+7248,112,,606,מזור,false,street_house,0.80,1,0,0,1,0
+7676,174,,284,שדה ורבורג,false,street_house,0.80,0,1,0,1,0
+7748,105,,162,חירות,false,street_house,0.80,0,1,0,1,0
+7797,218,,386,בני דרור,false,street_house,0.80,1,0,0,1,0
+80072,202,,1200,מודיעין-מכבים-רעות,false,street_house,0.80,1,0,0,1,0
+8040,91,,195,קדימה-צורן,false,street_only,0.80,1,0,0,1,0
+8041,66,,195,קדימה-צורן,false,street_only,0.80,0,1,0,1,0
+8214,10,,326,בית יצחק-שער חפר,false,street_house,0.80,0,1,0,1,0
+8214,151,,326,בית יצחק-שער חפר,false,street_house,0.80,1,0,0,1,0
+8217,234,,7400,נתניה,false,street_house,0.80,1,0,0,1,0
+8270,140,,7400,נתניה,false,street_house,0.80,1,0,0,1,0
+8280,59,,326,בית יצחק-שער חפר,false,street_house,0.80,1,0,0,1,0
+8297,16,,175,אביחיל,false,street_house,0.80,0,1,0,1,0
+8503,4,,698,בורגתה,false,street_only,0.80,2,0,0,2,0
+8547,3,,686,נווה ימין,false,street_house,0.80,1,0,0,1,0
+8917,57,,1224,כוכב יאיר,false,street_house,0.80,1,0,0,1,0
+9007,38,,147,גבעת ברנר,false,street_house,0.80,1,0,0,1,0
+9021,5,,5000,תל אביב - יפו,false,street_only,0.80,1,0,0,1,0
+9225,23,,162,חירות,false,street_only,0.80,0,1,0,1,0
+9503,197,,168,כפר יונה,false,street_house,0.80,1,0,0,1,0
+10080,187,,225,גן השומרון,true,settlement_centroid,0.40,0,2,0,2,0
+100901,120,,1240,עין הבשור,true,settlement_centroid,0.40,1,0,0,1,0
+10148,11,,310,כפר גליקסון,true,settlement_centroid,0.40,1,0,0,1,0
+11175,230,,738,דור,true,settlement_centroid,0.40,1,0,0,1,0
+12207,11,,529,אעבלין,true,settlement_centroid,0.40,0,2,0,2,0
+12674,38,,682,אליקים,true,settlement_centroid,0.40,0,1,0,1,0
+12713,33,,140,כפר יהושע,true,settlement_centroid,0.40,1,0,0,1,0
+13655,122,,372,רמות נפתלי,true,settlement_centroid,0.40,0,1,0,1,0
+14108,111,,487,ג'ש (גוש חלב),true,settlement_centroid,0.40,1,0,0,1,0
+15412,27,,530,עיילבון,true,settlement_centroid,0.40,0,1,0,1,0
+15516,54,,65,מגדל,true,settlement_centroid,0.40,2,0,0,2,0
+15643,2,,1253,אמנון,true,settlement_centroid,0.40,1,0,0,1,0
+16717,7,,94,בלפוריה,true,settlement_centroid,0.40,0,1,0,1,0
+17522,53,,542,ריינה,true,settlement_centroid,0.40,1,0,0,1,0
+17846,148,,1182,אלון הגליל,true,settlement_centroid,0.40,1,0,0,1,0
+19263,54,,1171,לוטם,true,settlement_centroid,0.40,0,1,0,1,0
+19411,50,,492,דייר חנא,true,settlement_centroid,0.40,0,1,0,1,0
+19951,336,,517,מזרעה,true,settlement_centroid,0.40,1,0,0,1,0
+2537,106,,793,גבעתי,true,settlement_centroid,0.40,0,1,0,1,0
+2552,39,,727,תלמי יחיאל,true,settlement_centroid,0.40,1,0,0,1,0
+2607,48,,888,"כפר הרי""ף",true,settlement_centroid,0.40,0,1,0,1,0
+2663,23,,582,כפר הנגיד,true,settlement_centroid,0.40,1,0,0,1,0
+2707,24,,274,כפר מנחם,true,settlement_centroid,0.40,1,0,0,1,0
+2749,25,,320,כפר ורבורג,true,settlement_centroid,0.40,0,1,0,1,0
+2899,123,,400,אבן שמואל,true,settlement_centroid,0.40,0,2,0,2,0
+30491,6,,521,עין נקובא,true,settlement_centroid,0.40,1,0,0,1,0
+34345,2,,1114,שריגים (לי-און),true,settlement_centroid,0.40,1,0,0,1,0
+4708,32,,615,קדרון,true,settlement_centroid,0.40,1,0,0,1,0
+5020,233,,685,בניה,true,settlement_centroid,0.40,1,0,0,1,0
+553,21,,234,ביצרון,true,settlement_centroid,0.40,0,1,0,1,0
+6308,25,,448,בני עטרות,true,settlement_centroid,0.40,1,0,0,1,0
+6450,7,,183,ירקונה,true,settlement_centroid,0.40,1,5,0,6,0
+7598,238,,198,צופית,true,settlement_centroid,0.40,0,1,0,1,0
+7802,38,,187,כפר הס,true,settlement_centroid,0.40,0,1,0,1,0
+7819,91,,157,עין ורד,true,settlement_centroid,0.40,0,2,0,2,0
+7862,21,,638,קלנסווה,true,settlement_centroid,0.40,0,1,0,1,0
+7923,92,,422,חרב לאת,true,settlement_centroid,0.40,0,1,0,1,0
+8042,16,,418,בני ציון,true,settlement_centroid,0.40,0,1,0,1,0
+8062,161,,837,עזריאל,true,settlement_centroid,0.40,0,1,0,1,0
+8277,39,,425,משמרת,true,settlement_centroid,0.40,0,2,0,2,0
+8310,43,,193,כפר חיים,true,settlement_centroid,0.40,1,1,0,2,0
+8330,115,,252,ביתן אהרן,true,settlement_centroid,0.40,0,1,0,1,0
+8346,18,,190,כפר ויתקין,true,settlement_centroid,0.40,0,1,0,1,0
+8372,68,,205,חגלה,true,settlement_centroid,0.40,0,1,0,1,0
+8688,35,,753,ינוב,true,settlement_centroid,0.40,0,1,0,1,0
+8864,1,,634,כפר קאסם,true,settlement_centroid,0.40,2,0,0,2,0
+8975,37,,389,בצרה,true,settlement_centroid,0.40,1,0,0,1,0
+9908,119,,697,בארותיים,true,settlement_centroid,0.40,0,1,0,1,0
+FAILED,אלפי מנשה,,3750,אלפי מנשה,true,failed,0.00,1,0,0,1,0
+FAILED,בית אריה,,3652,בית אריה,true,failed,0.00,2,0,0,2,0
+FAILED,ראמה,,543,ראמה,true,failed,0.00,2,1,0,3,0

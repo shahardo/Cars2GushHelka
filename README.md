@@ -81,6 +81,10 @@ Key flags:
   mapping (`{"<code-or-name>": "<category>"}`).
 - `--limit N` -- resolve at most N new distinct addresses (useful to test a
   resolver cheaply before a full run).
+- `--clear-cache` -- delete all cached tier/row resolutions in `--cache`
+  before running (irreversible; forces every row to be re-resolved from
+  scratch on this run). Can be used on its own, without `--input`, just to
+  wipe a cache file: `python -m cars2gushhelka --clear-cache --cache db/cache.sqlite`.
 
 During the resolve stage, every row prints one line to stderr with the
 address fields it processed and the outcome -- newly-resolved rows are

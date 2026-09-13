@@ -84,6 +84,12 @@ class AddressCache:
         self.flush()
         self.conn.close()
 
+    def clear(self) -> None:
+        """Delete all cached tier and row resolutions (irreversible)."""
+        self.conn.execute("DELETE FROM tier_cache")
+        self.conn.execute("DELETE FROM row_resolution")
+        self.flush()
+
     # -- tier-level cache ----------------------------------------------
 
     def get_tier(self, cache_key: str):

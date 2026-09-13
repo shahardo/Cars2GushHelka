@@ -82,7 +82,16 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   on disk). A transient resolver failure that got cached as a false miss
   will stay wrong until that key is cleared from `db/cache.sqlite` -- if a
   resolver bug is suspected, verify against a fresh cache before concluding
-  the data itself doesn't resolve.
+  the data itself doesn't resolve. `AddressCache.clear()` (wired to the
+  CLI's `--clear-cache` flag) wipes both `tier_cache` and `row_resolution`
+  wholesale -- there's no per-key clear from the CLI, only the whole cache
+  or manual SQL against `db/cache.sqlite`.
+- `--input` is optional at the argparse level (not `required=True`) so that
+  `--clear-cache` can run standalone; `main()` enforces it's required
+  instead, unless `--clear-cache` was also passed. `do_resolve`/
+  `do_aggregate` in `main()` both additionally check `args.input is not
+  None` -- keep that check if either stage's invocation changes, since
+  `run_resolve`/`run_aggregate` assume a non-`None` path.
 - `cli.py`'s `run_resolve` wraps its row loop in `try/except (Exception,
   KeyboardInterrupt)`: on any error (a resolver's `GovMapResponseError`
   after retries are exhausted, a dropped connection, Ctrl+C, ...) it

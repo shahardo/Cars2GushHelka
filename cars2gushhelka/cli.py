@@ -154,7 +154,10 @@ def run_aggregate(
 
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="cars2gushhelka", description=__doc__)
-    p.add_argument("--input", required=True, help="Ministry of Energy pipe-delimited vehicle file")
+    p.add_argument(
+        "--input", help="Ministry of Energy pipe-delimited vehicle file "
+                         "(required unless --clear-cache is the only action requested)",
+    )
     p.add_argument("--resolver", choices=["govmap", "spatial", "crosswalk"], default="crosswalk")
     p.add_argument("--cache", default="db/cache.sqlite", help="SQLite cache path (resumable)")
     p.add_argument("--output", default="gush_helka_by_engine.csv")
@@ -170,6 +173,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.set_defaults(use_secondary_address=True)
     p.add_argument("--resolve-only", action="store_true")
     p.add_argument("--aggregate-only", action="store_true")
+    p.add_argument(
+        "--clear-cache", action="store_true",
+        help="Delete all cached resolver/row entries in --cache before running "
+             "(irreversible; forces every row to be re-resolved)",
+    )
     p.add_argument("--limit", type=int, default=None, help="Stop after resolving N new distinct addresses")
     p.add_argument("--rate", type=float, default=5.0, help="Max resolver calls/sec (govmap)")
     return p
@@ -185,18 +193,26 @@ def main(argv=None) -> int:
     args = build_arg_parser().parse_args(argv)
     if args.resolve_only and args.aggregate_only:
         raise SystemExit("--resolve-only and --aggregate-only are mutually exclusive")
+    if args.input is None and not args.clear_cache:
+        raise SystemExit("--input is required")
 
     fuel_overrides = fuel.load_fuel_map(args.fuel_map) if args.fuel_map else None
 
-    do_resolve = not args.aggregate_only
-    do_aggregate = not args.resolve_only
+    do_resolve = not args.aggregate_only and args.input is not None
+    do_aggregate = not args.resolve_only and args.input is not None
 
     with AddressCache(args.cache) as cache:
+        if args.clear_cache:
+            cache.clear()
+            print(f"Cleared cache {args.cache!r}.", file=sys.stderr)
+
         if do_resolve:
+            assert args.input is not None
             resolver = build_resolver(args)
             run_resolve(args.input, resolver, cache, use_secondary_address=args.use_secondary_address, limit=args.limit)
 
         if do_aggregate:
+            assert args.input is not None
             aggregator = run_aggregate(
                 args.input, cache,
                 use_secondary_address=args.use_secondary_address,
