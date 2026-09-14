@@ -66,20 +66,31 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
 - Tests are fully offline (`tests/`, run via
   `python -m unittest discover -s tests`) and use `resolvers/crosswalk.py`
   or `resolvers/fake.py`, never a live resolver.
-- The resolve stage prints one line per row to stderr (address fields
-  processed + outcome) -- see `cli.py`'s `_describe_address`/
-  `_describe_resolution`. Cache hits are marked `*** CACHE HIT ***` and
+- The resolve stage prints one row per input row to stderr as a fixed-width
+  table -- see `cli.py`'s `_TRACE_COLUMNS` (column name/width/alignment),
+  `_trace_row`/`_fit` (rendering + truncation), `_print_trace_header`
+  (header + separator, printed once at the top of `run_resolve`), and the
+  per-column value helpers `_address_columns`/`_result_text`/`_flags_text`.
+  Cache hits leave `IDX` blank and get `CACHE HIT` in `FLAGS` (plus
+  `SECONDARY` when `RowResolution.used_secondary_address` is set) and
   aren't numbered/counted; newly-resolved rows are numbered and count
-  toward `--limit`. Keep this in sync with `VehicleRow`'s/`RowResolution`'s
-  fields if either changes shape. `_describe_address` reverses the
-  `settlement`/`street` field values (via `_rtl_display`) before printing,
-  since a terminal without bidi reordering would otherwise render Hebrew
-  text backwards -- this is purely a display transform for the stderr
-  trace, not applied anywhere data is stored or written to a file.
-- Each printed line also appends the running average rows/minute, computed
-  by `run_resolve`'s local `_rate()` helper from a `time.monotonic()`
-  timer started at the top of the function and the `seen` row count
-  (cache hits and newly-resolved rows both count toward it).
+  toward `--limit`. Keep `_address_columns`/`_result_text` in sync with
+  `VehicleRow`'s/`RowResolution`'s fields if either changes shape, and keep
+  `_TRACE_COLUMNS` in sync with the values passed to `_trace_row` in
+  `run_resolve` -- they're positional and must line up. `_address_columns`
+  reverses the `settlement`/`street` field values (via `_rtl_display`)
+  before printing, since a terminal without bidi reordering would
+  otherwise render Hebrew text backwards -- this is purely a display
+  transform for the stderr trace, not applied anywhere data is stored or
+  written to a file. A column value longer than its width is truncated
+  (via `_fit`) to keep the table aligned.
+- Each printed row also carries the running average rows/minute (`RATE`,
+  from `run_resolve`'s local `_rate()` helper, using a `time.monotonic()`
+  timer started at the top of the function and the `seen` row count --
+  cache hits and newly-resolved rows both count toward it) and the
+  cache-hit ratio over the most recent 100 rows (`CACHE HIT % (last 100)`,
+  from the local `_hit_ratio()` helper backed by a `collections.deque(...,
+  maxlen=100)` of per-row hit/miss booleans, `recent_hits`).
 - Tier-level cache entries (`tier_cache`, keyed by `ResolveQuery.cache_key`)
   are negative-cached too: a resolver call that returns no match caches
   that "no match" indefinitely (including across runs, since the cache is

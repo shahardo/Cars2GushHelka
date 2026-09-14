@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from collections import deque
 from typing import Optional
 
 from . import fuel, report
@@ -54,54 +55,106 @@ def _rtl_display(text: str) -> str:
     return text[::-1]
 
 
-def _describe_address(row) -> str:
-    fields = [
-        ("settlement", _rtl_display(row.shem_yishuv)),
-        ("street", _rtl_display(row.rechov)),
-        ("house", row.mispar_bait),
-        ("mikud", row.mikud),
-    ]
-    return " ".join(f"{name}={value!r}" for name, value in fields if value.strip())
+# Column layout for the per-row resolve trace (see run_resolve). Each entry is
+# (header, width, alignment) and drives both the header/separator lines and
+# every data row, so the trace prints as an equi-spaced table -- long values
+# are truncated to the column width rather than pushing later columns out of
+# alignment.
+_TRACE_COLUMNS = [
+    ("IDX", 6, ">"),
+    ("LINE", 7, ">"),
+    ("SETTLEMENT", 15, "<"),
+    ("STREET", 15, "<"),
+    ("HOUSE", 4, "<"),
+    ("MIKUD", 8, "<"),
+    ("RESULT", 40, "<"),
+    ("FLAGS", 20, "<"),
+    ("RATE", 13, ">"),
+    ("CACHE HIT % (last 100)", 22, ">"),
+]
 
 
-def _describe_resolution(resolution: RowResolution) -> str:
+def _fit(value, width: int, align: str) -> str:
+    text = str(value)
+    if len(text) > width:
+        return text[: width - 1] + "…" if width > 1 else text[:width]
+    return f"{text:{align}{width}}"
+
+
+def _trace_row(values: list) -> str:
+    cells = [_fit(value, width, align) for value, (_, width, align) in zip(values, _TRACE_COLUMNS)]
+    return " ".join(cells)
+
+
+def _print_trace_header() -> None:
+    print(_trace_row([header for header, _, _ in _TRACE_COLUMNS]), file=sys.stderr)
+    print(_trace_row(["-" * width for _, width, _ in _TRACE_COLUMNS]), file=sys.stderr)
+
+
+def _address_columns(row) -> list:
+    return [_rtl_display(row.shem_yishuv), _rtl_display(row.rechov), row.mispar_bait, row.mikud]
+
+
+def _result_text(resolution: RowResolution) -> str:
     if resolution.match_method == "failed":
-        return f"-> FAILED (bucket={resolution.helka})"
-    secondary = " [secondary address]" if resolution.used_secondary_address else ""
+        return f"FAILED (bucket={resolution.helka})"
     return (
-        f"-> gush={resolution.gush} helka={resolution.helka} "
-        f"(method={resolution.match_method}, confidence={resolution.confidence:.2f}){secondary}"
+        f"g:{resolution.gush} h:{resolution.helka} "
+        f"(m:{resolution.match_method}/{resolution.confidence:.2f})"
     )
+
+
+def _flags_text(*, is_cache_hit: bool, resolution: RowResolution) -> str:
+    flags = []
+    if is_cache_hit:
+        flags.append("CACHE HIT")
+    if resolution.used_secondary_address:
+        flags.append("SECONDARY")
+    return ", ".join(flags)
 
 
 def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary_address: bool = True, limit: Optional[int] = None) -> int:
     resolved_count = 0
     seen = 0
     start_time = time.monotonic()
+    recent_hits = deque(maxlen=100)  # True/False per row, oldest evicted past 100
 
     def _rate() -> str:
         elapsed_minutes = (time.monotonic() - start_time) / 60.0
         lines_per_minute = seen / elapsed_minutes if elapsed_minutes > 0 else 0.0
-        return f"avg {lines_per_minute:.1f} lines/min"
+        return f"{lines_per_minute:.1f}/min"
 
+    def _hit_ratio() -> str:
+        hits = sum(recent_hits)
+        window = len(recent_hits)
+        pct = (hits / window * 100.0) if window else 0.0
+        return f"{hits}/{window} ({pct:.1f}%)"
+
+    _print_trace_header()
     try:
         for row in iter_rows(input_path, on_error=_on_parse_error):
             seen += 1
             key = row_identity_key(row, use_secondary_address)
             cached = cache.get_row(key)
             if cached is not cache.MISS:
+                recent_hits.append(True)
                 print(
-                    f"line {row.line_no}: {_describe_address(row)} "
-                    f"{_describe_resolution(cached)} *** CACHE HIT *** ({_rate()})",
+                    _trace_row([
+                        "", row.line_no, *_address_columns(row), _result_text(cached),
+                        _flags_text(is_cache_hit=True, resolution=cached), _rate(), _hit_ratio(),
+                    ]),
                     file=sys.stderr,
                 )
                 continue
             resolution = resolve_row(row, resolver, cache=cache, use_secondary_address=use_secondary_address)
             cache.set_row(key, resolution)
             resolved_count += 1
+            recent_hits.append(False)
             print(
-                f"[{resolved_count}] line {row.line_no}: {_describe_address(row)} "
-                f"{_describe_resolution(resolution)} ({_rate()})",
+                _trace_row([
+                    resolved_count, row.line_no, *_address_columns(row), _result_text(resolution),
+                    _flags_text(is_cache_hit=False, resolution=resolution), _rate(), _hit_ratio(),
+                ]),
                 file=sys.stderr,
             )
             if limit is not None and resolved_count >= limit:
