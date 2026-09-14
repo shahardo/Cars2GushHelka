@@ -7,3 +7,5 @@ __pycache__/
 /* data files */
 gush_helka_by_engine.csv
 unresolved_report.csv
+
+data/cars.txt
