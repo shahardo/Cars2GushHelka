@@ -70,7 +70,7 @@ _TRACE_COLUMNS = [
     ("RESULT", 40, "<"),
     ("FLAGS", 20, "<"),
     ("RATE", 13, ">"),
-    ("CACHE HIT % (last 100)", 22, ">"),
+    ("CACHE HIT % (last 500)", 22, ">"),
 ]
 
 
@@ -116,12 +116,15 @@ def _flags_text(*, is_cache_hit: bool, resolution: RowResolution) -> str:
 def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary_address: bool = True, limit: Optional[int] = None) -> int:
     resolved_count = 0
     seen = 0
-    start_time = time.monotonic()
-    recent_hits = deque(maxlen=100)  # True/False per row, oldest evicted past 100
+    recent_hits = deque(maxlen=500)  # True/False per row, oldest evicted past 500
+    recent_times = deque(maxlen=500)  # time.monotonic() per row, oldest evicted past 500
 
     def _rate() -> str:
-        elapsed_minutes = (time.monotonic() - start_time) / 60.0
-        lines_per_minute = seen / elapsed_minutes if elapsed_minutes > 0 else 0.0
+        recent_times.append(time.monotonic())
+        if len(recent_times) < 2:
+            return "0.0/min"
+        elapsed_minutes = (recent_times[-1] - recent_times[0]) / 60.0
+        lines_per_minute = (len(recent_times) - 1) / elapsed_minutes if elapsed_minutes > 0 else 0.0
         return f"{lines_per_minute:.1f}/min"
 
     def _hit_ratio() -> str:

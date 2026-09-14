@@ -92,11 +92,12 @@ Newly-resolved rows carry a number in `IDX`; rows already answered by the
 cache (a previous run, or an earlier row with the identical address) leave
 `IDX` blank and get `CACHE HIT` in the `FLAGS` column instead (alongside
 `SECONDARY` when the `*_nosaf` fallback address was used). The `RATE` column
-is the running average of rows processed per minute (a timer starts when
-the resolve stage begins), and the last column is the cache-hit ratio over
-the most recent 100 rows (fewer than 100 near the start of a run), so you
-can see at a glance how much of the current run is fresh resolver work vs.
-free cache hits. The `SETTLEMENT`/`STREET` columns have their character
+is the average rows processed per minute over the most recent 500 rows
+(fewer than 500 near the start of a run), and the last column is the
+cache-hit ratio over the most recent 500 rows (fewer than 500 near the
+start of a run), so you can see at a glance how much of the current run is
+fresh resolver work vs. free cache hits. The `SETTLEMENT`/`STREET` columns
+have their character
 order reversed before printing -- most terminals print left-to-right
 without bidi reordering, so raw Hebrew text would otherwise look reversed;
 flipping it makes it read correctly (RTL) in the printout. This only
@@ -105,7 +106,7 @@ than its column width is truncated (with a trailing `…`) so the table stays
 aligned:
 
 ```
-   IDX    LINE SETTLEMENT       STREET           HOUSE  MIKUD     RESULT                                                                     FLAGS                         RATE CACHE HIT % (last 100)
+   IDX    LINE SETTLEMENT       STREET           HOUSE  MIKUD     RESULT                                                                     FLAGS                         RATE CACHE HIT % (last 500)
 ------ ------- ---------------- ---------------- ------ --------- -------------------------------------------------------------------------- -------------------- ------------- ----------------------
      5       6 רוכרכ-הנח סדרפ   בשומה            64     3706964   gush=10074 helka=77 (method=street_house, confidence=0.80)                                        42.3/min                4/6 (66.7%)
              7 רוכרכ-הנח סדרפ   בשומה            64     3706964   gush=10074 helka=77 (method=street_house, confidence=0.80)                 CACHE HIT              43.1/min                5/7 (71.4%)

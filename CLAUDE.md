@@ -84,13 +84,14 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   transform for the stderr trace, not applied anywhere data is stored or
   written to a file. A column value longer than its width is truncated
   (via `_fit`) to keep the table aligned.
-- Each printed row also carries the running average rows/minute (`RATE`,
-  from `run_resolve`'s local `_rate()` helper, using a `time.monotonic()`
-  timer started at the top of the function and the `seen` row count --
-  cache hits and newly-resolved rows both count toward it) and the
-  cache-hit ratio over the most recent 100 rows (`CACHE HIT % (last 100)`,
-  from the local `_hit_ratio()` helper backed by a `collections.deque(...,
-  maxlen=100)` of per-row hit/miss booleans, `recent_hits`).
+- Each printed row also carries the average rows/minute over the most
+  recent 500 rows (`RATE`, from `run_resolve`'s local `_rate()` helper,
+  backed by a `collections.deque(..., maxlen=500)` of `time.monotonic()`
+  timestamps, `recent_times` -- cache hits and newly-resolved rows both
+  count toward it) and the cache-hit ratio over the most recent 500 rows
+  (`CACHE HIT % (last 500)`, from the local `_hit_ratio()` helper backed by
+  a `collections.deque(..., maxlen=500)` of per-row hit/miss booleans,
+  `recent_hits`).
 - Tier-level cache entries (`tier_cache`, keyed by `ResolveQuery.cache_key`)
   are negative-cached too: a resolver call that returns no match caches
   that "no match" indefinitely (including across runs, since the cache is
