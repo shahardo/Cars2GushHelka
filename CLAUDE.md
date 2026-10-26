@@ -102,9 +102,15 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   CLI's `--clear-cache` flag) wipes both `tier_cache` and `row_resolution`
   wholesale -- there's no per-key clear from the CLI, only the whole cache
   or manual SQL against `db/cache.sqlite`.
+- `--export-cache CSV_PATH` dumps the `row_resolution` table to CSV via
+  `report.write_cache_export` (rows from `AddressCache.iter_row_resolutions`;
+  the address columns are recovered by splitting the `row_identity_key`
+  string, so keep `CACHE_EXPORT_COLUMNS` in sync with that key's layout in
+  `matcher.row_identity_key`). FAILED rows are skipped. It runs after
+  `--clear-cache` and before the resolve/aggregate stages.
 - `--input` is optional at the argparse level (not `required=True`) so that
-  `--clear-cache` can run standalone; `main()` enforces it's required
-  instead, unless `--clear-cache` was also passed. `do_resolve`/
+  `--clear-cache` / `--export-cache` can run standalone; `main()` enforces
+  it's required instead, unless one of those was also passed. `do_resolve`/
   `do_aggregate` in `main()` both additionally check `args.input is not
   None` -- keep that check if either stage's invocation changes, since
   `run_resolve`/`run_aggregate` assume a non-`None` path.

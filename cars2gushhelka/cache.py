@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from typing import Optional
+from typing import Iterator, Optional, Tuple
 
 from .matcher import MISS, RowResolution
 from .resolvers.base import ResolvedParcel
@@ -127,6 +127,24 @@ class AddressCache:
         self._maybe_commit()
 
     # -- row-level cache -------------------------------------------------
+
+    def iter_row_resolutions(self) -> Iterator[Tuple[str, RowResolution]]:
+        """Yield every (row_key, RowResolution) in the row-level cache,
+        ordered by key. Used by the address -> gush/helka CSV export."""
+        cursor = self.conn.execute(
+            "SELECT row_key, gush, helka, sub_helka, match_method, confidence, "
+            "is_aggregated, used_secondary_address, settlement_code, settlement_name "
+            "FROM row_resolution ORDER BY row_key"
+        )
+        for (row_key, gush, helka, sub_helka, match_method, confidence,
+             is_aggregated, used_secondary, code, name) in cursor:
+            yield row_key, RowResolution(
+                gush=gush, helka=helka, sub_helka=sub_helka,
+                match_method=match_method, confidence=confidence,
+                is_aggregated=bool(is_aggregated),
+                used_secondary_address=bool(used_secondary),
+                settlement_code=code, settlement_name=name,
+            )
 
     def get_row(self, row_key: str):
         row = self.conn.execute(

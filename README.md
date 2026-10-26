@@ -85,6 +85,16 @@ Key flags:
   before running (irreversible; forces every row to be re-resolved from
   scratch on this run). Can be used on its own, without `--input`, just to
   wipe a cache file: `python -m cars2gushhelka --clear-cache --cache db/cache.sqlite`.
+- `--export-cache CSV_PATH` -- write every resolved address → gush/helka
+  mapping stored in `--cache` to `CSV_PATH` (UTF-8 with BOM, for Excel).
+  One row per distinct address in the row-level cache, with the primary
+  address (`settlement_code`, `settlement_name`, `street`, `house_number`,
+  `mikud`), the secondary (`*_nosaf`) address it was combined with, if any
+  (`secondary_*`), and the result (`gush`, `helka`, `sub_helka`,
+  `match_method`, `confidence`, `is_aggregated`, `used_secondary_address`).
+  Rows that failed to resolve are skipped (they hold a settlement bucket, not
+  a parcel). Can be used on its own, without `--input`:
+  `python -m cars2gushhelka --export-cache mappings.csv --cache db/cache.sqlite`.
 
 During the resolve stage, every row prints one line to stderr, formatted as
 a fixed-width table (a header + separator row print once at the start).

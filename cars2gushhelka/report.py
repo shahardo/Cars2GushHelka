@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 import sys
-from typing import IO, Optional
+from typing import IO, Optional, Tuple
 
 from .aggregate import Aggregator
 from .fuel import ordered_categories
@@ -97,3 +97,54 @@ def print_summary(aggregator: Aggregator, *, use_secondary_address: bool, out: O
     reconciled = sum(stats.total for stats in aggregator.parcels.values())
     status = "OK" if reconciled == aggregator.total_rows else "MISMATCH"
     print(f"Reconciliation check: sum of all output cells = {reconciled} ({status})", file=out)
+
+
+CACHE_EXPORT_COLUMNS = [
+    "settlement_code",
+    "settlement_name",
+    "street",
+    "house_number",
+    "mikud",
+    "secondary_settlement_code",
+    "secondary_street",
+    "secondary_house_number",
+    "secondary_mikud",
+    "gush",
+    "helka",
+    "sub_helka",
+    "match_method",
+    "confidence",
+    "is_aggregated",
+    "used_secondary_address",
+]
+
+
+def write_cache_export(cache, output_path: str) -> Tuple[int, int]:
+    """Dump every resolved address -> gush/helka mapping in the cache's
+    row-level table to a CSV (UTF-8 with BOM, for Excel). The address fields
+    are recovered from the row key (see `matcher.row_identity_key`):
+    `<sec|nosec>|semel|street|house|mikud[|semel|street|house|mikud]`.
+
+    FAILED rows are skipped, since they aren't mappings (their gush/helka
+    columns hold a settlement bucket, not a parcel). Returns
+    (rows_written, failed_rows_skipped)."""
+    written = skipped = 0
+    with open(output_path, "w", encoding="utf-8-sig", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(CACHE_EXPORT_COLUMNS)
+        for row_key, res in cache.iter_row_resolutions():
+            if res.gush == FAILED_GUSH:
+                skipped += 1
+                continue
+            parts = row_key.split("|")[1:]
+            parts += [""] * (8 - len(parts))  # no secondary address in the key
+            writer.writerow([
+                res.settlement_code, res.settlement_name,
+                *parts[1:4], *parts[4:8],  # parts[0] is the primary semel (= settlement_code)
+                res.gush, res.helka, res.sub_helka,
+                res.match_method, f"{res.confidence:.2f}",
+                "true" if res.is_aggregated else "false",
+                "true" if res.used_secondary_address else "false",
+            ])
+            written += 1
+    return written, skipped

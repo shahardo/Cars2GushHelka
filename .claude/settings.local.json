@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -v *)",
+      "Bash(python -c ' *)",
+      "Bash(python -m cars2gushhelka *)",
+      "Bash(curl -s -X POST *)",
+      "Bash(curl -s *)",
+      "WebFetch(domain:api.govmap.gov.il)",
+      "Bash(curl -sL *)",
+      "Read(//tmp/**)",
+      "Bash(grep *)"
+    ]
+  }
+}

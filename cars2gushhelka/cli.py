@@ -219,7 +219,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="cars2gushhelka", description=__doc__)
     p.add_argument(
         "--input", help="Ministry of Energy pipe-delimited vehicle file "
-                         "(required unless --clear-cache is the only action requested)",
+                         "(required unless --clear-cache and/or --export-cache is the only action requested)",
     )
     p.add_argument("--resolver", choices=["govmap", "spatial", "crosswalk"], default="crosswalk")
     p.add_argument("--cache", default="db/cache.sqlite", help="SQLite cache path (resumable)")
@@ -241,6 +241,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Delete all cached resolver/row entries in --cache before running "
              "(irreversible; forces every row to be re-resolved)",
     )
+    p.add_argument(
+        "--export-cache", metavar="CSV_PATH",
+        help="Write every resolved address -> gush/helka mapping in --cache to CSV_PATH "
+             "(UTF-8 with BOM); can be used on its own, without --input",
+    )
     p.add_argument("--limit", type=int, default=None, help="Stop after resolving N new distinct addresses")
     p.add_argument("--rate", type=float, default=5.0, help="Max resolver calls/sec (govmap)")
     return p
@@ -256,7 +261,7 @@ def main(argv=None) -> int:
     args = build_arg_parser().parse_args(argv)
     if args.resolve_only and args.aggregate_only:
         raise SystemExit("--resolve-only and --aggregate-only are mutually exclusive")
-    if args.input is None and not args.clear_cache:
+    if args.input is None and not args.clear_cache and not args.export_cache:
         raise SystemExit("--input is required")
 
     fuel_overrides = fuel.load_fuel_map(args.fuel_map) if args.fuel_map else None
@@ -268,6 +273,14 @@ def main(argv=None) -> int:
         if args.clear_cache:
             cache.clear()
             print(f"Cleared cache {args.cache!r}.", file=sys.stderr)
+
+        if args.export_cache:
+            written, skipped = report.write_cache_export(cache, args.export_cache)
+            print(
+                f"Wrote {args.export_cache} ({written} address mappings; "
+                f"{skipped} failed rows skipped)",
+                file=sys.stderr,
+            )
 
         if do_resolve:
             assert args.input is not None
