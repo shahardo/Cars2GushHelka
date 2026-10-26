@@ -1,6 +1,6 @@
 """CLI: orchestrates the resolve and aggregate stages.
 
-    python -m cars2gushhelka --input FILE --resolver {govmap,spatial,crosswalk} ...
+    python -m cars2gushhelka --input FILE --resolver {govmap,nominatim,spatial,crosswalk} ...
 
 See README.md for the full flag reference and backend trade-offs.
 """
@@ -34,6 +34,13 @@ def build_resolver(args: argparse.Namespace):
     if args.resolver == "govmap":
         from .resolvers.govmap import GovMapResolver
         return GovMapResolver(rate_limit_seconds=1.0 / args.rate if args.rate else 0.2)
+
+    if args.resolver == "nominatim":
+        from .resolvers.nominatim import NominatimResolver
+        # --rate only governs the GovMap WFS step here; the Nominatim
+        # geocoding step is always floored at 1 req/sec (see
+        # resolvers/nominatim.py) regardless of --rate.
+        return NominatimResolver(govmap_rate_limit_seconds=1.0 / args.rate if args.rate else 0.2)
 
     if args.resolver == "spatial":
         from .resolvers.spatial import ParcelIndex, SpatialResolver
@@ -221,7 +228,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--input", help="Ministry of Energy pipe-delimited vehicle file "
                          "(required unless --clear-cache and/or --export-cache is the only action requested)",
     )
-    p.add_argument("--resolver", choices=["govmap", "spatial", "crosswalk"], default="crosswalk")
+    p.add_argument("--resolver", choices=["govmap", "nominatim", "spatial", "crosswalk"], default="crosswalk")
     p.add_argument("--cache", default="db/cache.sqlite", help="SQLite cache path (resumable)")
     p.add_argument("--output", default="gush_helka_by_engine.csv")
     p.add_argument("--unresolved-output", default="unresolved_report.csv")
@@ -247,7 +254,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
              "(UTF-8 with BOM); can be used on its own, without --input",
     )
     p.add_argument("--limit", type=int, default=None, help="Stop after resolving N new distinct addresses")
-    p.add_argument("--rate", type=float, default=5.0, help="Max resolver calls/sec (govmap)")
+    p.add_argument(
+        "--rate", type=float, default=5.0,
+        help="Max resolver calls/sec (govmap; also the GovMap WFS step of nominatim -- "
+             "nominatim's own geocoding step is always floored at 1 req/sec)",
+    )
     return p
 
 

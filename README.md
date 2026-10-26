@@ -61,8 +61,8 @@ python -m cars2gushhelka \
 
 Key flags:
 
-- `--resolver {crosswalk,govmap,spatial}` -- which backend resolves an
-  address to a gush/helka (see below).
+- `--resolver {crosswalk,govmap,nominatim,spatial}` -- which backend resolves
+  an address to a gush/helka (see below).
 - `--cache PATH` -- SQLite cache (default `db/cache.sqlite`, directory created
   automatically). **Resumable**:
   re-running only resolves addresses not already cached, so an interrupted
@@ -179,6 +179,55 @@ Two things worth knowing:
   `resolvers/govmap.py` connects with `SECLEVEL=1` explicitly (certificate
   verification stays on).
 
+### `nominatim` -- online, via OpenStreetMap Nominatim + GovMap's open-data WFS
+
+The same two-call approach used by parametric.co.il's public gush/helka
+lookup tool (https://parametric.co.il/gush-helka.html):
+
+1. `GET https://nominatim.openstreetmap.org/search` -- geocode the free-text
+   address (`street house_number, settlement` / bare mikud / bare
+   settlement name, matching the other resolvers' tiers) to a WGS84
+   (EPSG:4326) lat/lon, restricted to `countrycodes=il`.
+2. `GET https://open.govmap.gov.il/geoserver/opendata/wfs` -- a standard OGC
+   WFS `GetFeature` request against GovMap's public `opendata:PARCEL_ALL`
+   cadastral layer, filtered with `CQL_FILTER=INTERSECTS(the_geom, POINT(lon
+   lat))` (server-side point-in-polygon, no local CRS reprojection needed --
+   the WFS query is sent and returned in EPSG:4326 directly, so no
+   Web-Mercator conversion like `govmap.py`'s `parcel-search` step needs).
+   `GUSH_NUM`/`PARCEL` in the response become gush/helka; a non-zero
+   `GUSH_SUFFI` is appended to the gush as `<gush>/<suffix>`.
+
+Try it with a small batch before a full run:
+
+```bash
+python -m cars2gushhelka --input file.txt --resolver nominatim --limit 20
+```
+
+Three things worth knowing:
+
+- **Nominatim rate limit is non-negotiable.** Nominatim's public instance
+  usage policy (https://operations.osmfoundation.org/policies/nominatim/)
+  caps usage at 1 request/second and requires a descriptive (non-browser)
+  User-Agent. `resolvers/nominatim.py` hard-floors its geocoding step's
+  throttle at 1 req/sec regardless of `--rate` -- only the GovMap WFS step
+  honors `--rate`. For any real volume of addresses, consider standing up
+  your own Nominatim instance rather than hammering the public one.
+- **Unverified against the live page.** Unlike the `govmap` resolver's
+  endpoints (reverse-engineered from the live portal's own JS bundle and
+  checked against real responses), this module's request shapes were
+  reconstructed from Nominatim's published API docs and GovMap's WFS
+  `GetFeature` conventions -- not verified against parametric.co.il's
+  actual network calls (no general internet egress was available while
+  building this). If a response shape doesn't match, it fails loudly
+  (`NominatimGovMapResponseError`) rather than guessing; the fix is to
+  re-derive the current shape and adjust `resolvers/nominatim.py`'s
+  `_extract_latlon`/`_extract_parcel`.
+- **TLS is untested.** `open.govmap.gov.il` is presumed to have an
+  ordinary, modern TLS setup (unlike `www.govmap.gov.il`'s legacy-cipher
+  quirk, see below) -- this is an assumption, not something verified live.
+  If it turns out to need the same `SECLEVEL=1` workaround, apply it the
+  same way `resolvers/govmap.py` does.
+
 ### `spatial` -- fully offline, point-in-polygon against a local parcels layer
 
 Needs a parcels GeoJSON layer and a `Geocoder` implementation, neither of
@@ -190,8 +239,9 @@ you actually use this resolver.
 ## Setting up offline mode
 
 "Offline" here means no live network calls during the actual run --
-i.e. anything other than `--resolver govmap`. There are two paths, and
-which one to set up depends on what you already have access to.
+i.e. anything other than `--resolver govmap`/`--resolver nominatim`. There
+are two paths, and which one to set up depends on what you already have
+access to.
 
 ### Path 1: `crosswalk` -- if you have (or can get) any address/mikud → gush/helka table
 

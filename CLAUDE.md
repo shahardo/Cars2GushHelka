@@ -46,6 +46,12 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
 - `crosswalk.py` -- offline, CSV-driven (default).
 - `govmap.py` -- online, against GovMap's portal API (see README for the
   live endpoint details and the TLS quirk it works around).
+- `nominatim.py` -- online, OpenStreetMap Nominatim (geocode) + GovMap's
+  public open-data WFS (point -> gush/helka); the two-call flow
+  parametric.co.il's gush/helka tool uses. See README for the endpoint
+  details and the caveat that this module's exact request shapes are
+  reconstructed from public API docs, not verified against that site's
+  live JS.
 - `spatial.py` -- offline, point-in-polygon against a local parcels layer;
   needs a `Geocoder` supplied programmatically (not wired into the CLI).
 - `fake.py` -- test-only stub resolver.
