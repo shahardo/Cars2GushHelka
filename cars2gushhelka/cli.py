@@ -16,7 +16,7 @@ from typing import Optional
 from . import fuel, report
 from .aggregate import Aggregator
 from .cache import AddressCache
-from .matcher import resolve_row, row_identity_key, RowResolution
+from .matcher import lookup_row_resolution, resolve_row, store_row_resolution, RowResolution
 from .reader import iter_rows
 
 
@@ -144,8 +144,7 @@ def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary
     try:
         for row in iter_rows(input_path, on_error=_on_parse_error):
             seen += 1
-            key = row_identity_key(row, use_secondary_address)
-            cached = cache.get_row(key)
+            cached = lookup_row_resolution(row, cache, use_secondary_address)
             if cached is not cache.MISS:
                 recent_hits.append(True)
                 print(
@@ -157,7 +156,7 @@ def run_resolve(input_path: str, resolver, cache: AddressCache, *, use_secondary
                 )
                 continue
             resolution = resolve_row(row, resolver, cache=cache, use_secondary_address=use_secondary_address)
-            cache.set_row(key, resolution)
+            store_row_resolution(row, cache, use_secondary_address, resolution)
             resolved_count += 1
             recent_hits.append(False)
             print(
@@ -197,8 +196,7 @@ def run_aggregate(
     aggregator = Aggregator()
     unresolved_in_cache = 0
     for row in iter_rows(input_path, on_error=_on_parse_error):
-        key = row_identity_key(row, use_secondary_address)
-        resolution = cache.get_row(key)
+        resolution = lookup_row_resolution(row, cache, use_secondary_address)
         if resolution is cache.MISS:
             unresolved_in_cache += 1
             resolution = RowResolution(

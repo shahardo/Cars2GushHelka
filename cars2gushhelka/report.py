@@ -8,7 +8,7 @@ from typing import IO, Optional, Tuple
 
 from .aggregate import Aggregator
 from .fuel import ordered_categories
-from .matcher import FAILED_GUSH
+from .matcher import FAILED_GUSH, SECONDARY_KEY_PREFIX
 
 BASE_COLUMNS = [
     "gush",
@@ -122,8 +122,10 @@ CACHE_EXPORT_COLUMNS = [
 def write_cache_export(cache, output_path: str) -> Tuple[int, int]:
     """Dump every resolved address -> gush/helka mapping in the cache's
     row-level table to a CSV (UTF-8 with BOM, for Excel). The address fields
-    are recovered from the row key (see `matcher.row_identity_key`):
-    `<sec|nosec>|semel|street|house|mikud[|semel|street|house|mikud]`.
+    are recovered from the row key (see `matcher.store_row_resolution`):
+    `<primary|sec|nosec>|semel|street|house|mikud[|semel|street|house|mikud]`,
+    or `secondary|semel|street|house|mikud` for a parcel found via the
+    secondary address (exported with the main address columns blank).
 
     FAILED rows are skipped, since they aren't mappings (their gush/helka
     columns hold a settlement bucket, not a parcel). Returns
@@ -136,11 +138,18 @@ def write_cache_export(cache, output_path: str) -> Tuple[int, int]:
             if res.gush == FAILED_GUSH:
                 skipped += 1
                 continue
-            parts = row_key.split("|")[1:]
-            parts += [""] * (8 - len(parts))  # no secondary address in the key
+            prefix, *parts = row_key.split("|")
+            if prefix == SECONDARY_KEY_PREFIX:
+                # Resolved via the secondary address, cached under it alone:
+                # leave the main address columns blank.
+                primary_cols, secondary_cols = [""] * 3, parts[0:4]
+            else:
+                parts += [""] * (8 - len(parts))  # no secondary address in the key
+                # parts[0] is the primary semel (= settlement_code)
+                primary_cols, secondary_cols = parts[1:4], parts[4:8]
             writer.writerow([
                 res.settlement_code, res.settlement_name,
-                *parts[1:4], *parts[4:8],  # parts[0] is the primary semel (= settlement_code)
+                *primary_cols, *secondary_cols,
                 res.gush, res.helka, res.sub_helka,
                 res.match_method, f"{res.confidence:.2f}",
                 "true" if res.is_aggregated else "false",

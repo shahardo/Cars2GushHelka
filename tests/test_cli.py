@@ -52,6 +52,26 @@ class ExportCacheTests(unittest.TestCase):
             self.assertEqual(with_secondary["secondary_street"], "הגפן")
             self.assertEqual(with_secondary["used_secondary_address"], "true")
 
+    def test_export_secondary_only_key_leaves_main_address_blank(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_path = os.path.join(tmp, "cache.sqlite")
+            out_path = os.path.join(tmp, "mappings.csv")
+            with AddressCache(cache_path) as cache:
+                cache.set_row("secondary|249|הגפן|2|4993501", self._resolution("4050", "7", secondary=True))
+
+            self.assertEqual(main(["--export-cache", out_path, "--cache", cache_path]), 0)
+
+            with open(out_path, encoding="utf-8-sig", newline="") as fh:
+                (row,) = list(csv.DictReader(fh))
+            self.assertEqual((row["street"], row["house_number"], row["mikud"]), ("", "", ""))
+            self.assertEqual(
+                (row["secondary_settlement_code"], row["secondary_street"],
+                 row["secondary_house_number"], row["secondary_mikud"]),
+                ("249", "הגפן", "2", "4993501"),
+            )
+            self.assertEqual((row["gush"], row["helka"]), ("4050", "7"))
+            self.assertEqual(row["used_secondary_address"], "true")
+
 
 if __name__ == "__main__":
     unittest.main()

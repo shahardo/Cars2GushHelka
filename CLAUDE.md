@@ -108,11 +108,24 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   CLI's `--clear-cache` flag) wipes both `tier_cache` and `row_resolution`
   wholesale -- there's no per-key clear from the CLI, only the whole cache
   or manual SQL against `db/cache.sqlite`.
+- Row-level cache keys (`row_resolution`) depend on how a row resolved --
+  see `matcher.lookup_row_resolution` / `store_row_resolution` (cli.py must
+  go through these, not build keys itself): a parcel found via the primary
+  address is keyed `primary|semel|street|house|mikud`; one found via the
+  secondary address is keyed `secondary|...` on the secondary fields alone
+  (the main address didn't resolve, so it isn't stored), and its
+  `settlement_code/name` are the secondary's; centroid/failed outcomes (and
+  everything under `--no-secondary-address`) use the full
+  `row_identity_key` (`sec|`/`nosec|` + primary [+ secondary]). Lookup tries
+  primary, then secondary (only when `_primary_known_failed`, i.e. every
+  primary tier query is negative-cached -- otherwise a different row with
+  a resolvable main address would wrongly inherit the secondary result),
+  then the full key. Old caches with full-key entries still work.
 - `--export-cache CSV_PATH` dumps the `row_resolution` table to CSV via
   `report.write_cache_export` (rows from `AddressCache.iter_row_resolutions`;
-  the address columns are recovered by splitting the `row_identity_key`
-  string, so keep `CACHE_EXPORT_COLUMNS` in sync with that key's layout in
-  `matcher.row_identity_key`). FAILED rows are skipped. It runs after
+  the address columns are recovered by splitting the row key string, so
+  keep `CACHE_EXPORT_COLUMNS` in sync with the key layouts above in
+  `matcher.py`; `secondary|` keys export with blank main-address columns). FAILED rows are skipped. It runs after
   `--clear-cache` and before the resolve/aggregate stages.
 - `--input` is optional at the argparse level (not `required=True`) so that
   `--clear-cache` / `--export-cache` can run standalone; `main()` enforces

@@ -183,6 +183,11 @@ def resolve_row(
                 used_secondary = True
 
     if parcel is not None:
+        if used_secondary:
+            # The result is cached under the secondary address (see
+            # store_row_resolution), so describe the secondary settlement.
+            settlement_code = secondary.semel_yishuv
+            settlement_name = secondary.settlement_name
         return RowResolution(
             gush=parcel.gush,
             helka=parcel.helka,
@@ -232,10 +237,61 @@ def resolve_row(
     )
 
 
+PRIMARY_KEY_PREFIX = "primary"
+SECONDARY_KEY_PREFIX = "secondary"
+
+
+def _address_key(prefix: str, candidate: AddressCandidate) -> str:
+    parts = [prefix, candidate.semel_yishuv, candidate.street, candidate.house_number, candidate.mikud]
+    return "|".join(clean_text(p) for p in parts)
+
+
+def _primary_known_failed(row: VehicleRow, cache) -> bool:
+    """True when every primary tier query is already negative-cached, i.e.
+    the primary address is known not to resolve. Only then is a row-level
+    entry keyed on the secondary address valid for this row."""
+    return all(cache.get_tier(q.cache_key) is None for q in _tier_queries(primary_candidate(row)))
+
+
+def lookup_row_resolution(row: VehicleRow, cache, use_secondary_address: bool):
+    """Row-level cache lookup; returns a RowResolution or `cache.MISS`.
+
+    With secondary addresses enabled the keys are tried in order: the
+    primary address alone, the secondary address alone (only when the
+    primary is known to fail), then the full primary+secondary identity
+    (used for centroid/failed outcomes). See `store_row_resolution`."""
+    if not use_secondary_address:
+        return cache.get_row(row_identity_key(row, False))
+    hit = cache.get_row(_address_key(PRIMARY_KEY_PREFIX, primary_candidate(row)))
+    if hit is not MISS:
+        return hit
+    secondary = secondary_candidate(row)
+    if secondary is not None and secondary.is_usable and _primary_known_failed(row, cache):
+        hit = cache.get_row(_address_key(SECONDARY_KEY_PREFIX, secondary))
+        if hit is not MISS:
+            return hit
+    return cache.get_row(row_identity_key(row, True))
+
+
+def store_row_resolution(row: VehicleRow, cache, use_secondary_address: bool, resolution: RowResolution) -> None:
+    """Row-level cache write. A parcel found via the secondary address is
+    stored under the secondary address alone (not the main address, which
+    didn't resolve); one found via the primary address under the primary
+    alone; anything else (centroid/failed) under the full identity."""
+    if use_secondary_address and resolution.used_secondary_address:
+        key = _address_key(SECONDARY_KEY_PREFIX, secondary_candidate(row))
+    elif use_secondary_address and not resolution.is_aggregated:
+        key = _address_key(PRIMARY_KEY_PREFIX, primary_candidate(row))
+    else:
+        key = row_identity_key(row, use_secondary_address)
+    cache.set_row(key, resolution)
+
+
 def row_identity_key(row: VehicleRow, use_secondary_address: bool) -> str:
-    """Cache key for the row-level resolution cache: two rows with byte-
-    identical address fields (extremely common -- many vehicles share one
-    owner address) resolve once and are looked up thereafter."""
+    """Full cache key (primary + secondary address) for the row-level
+    resolution cache: two rows with byte-identical address fields (extremely
+    common -- many vehicles share one owner address) resolve once and are
+    looked up thereafter."""
     primary = primary_candidate(row)
     parts = [
         "sec" if use_secondary_address else "nosec",

@@ -2,9 +2,11 @@ import unittest
 
 from cars2gushhelka.cache import AddressCache
 from cars2gushhelka.matcher import (
+    lookup_row_resolution,
     resolve_row,
     row_identity_key,
     secondary_candidate,
+    store_row_resolution,
 )
 from cars2gushhelka.reader import VehicleRow
 from cars2gushhelka.resolvers.base import MatchMethod, ResolvedParcel, ResolveQuery
@@ -238,6 +240,57 @@ class CachingTests(unittest.TestCase):
             calls_after_first = len(resolver.calls)
             resolve_row(row, resolver, cache=cache)
             self.assertEqual(len(resolver.calls), calls_after_first)
+
+
+class RowCacheKeyTests(unittest.TestCase):
+    def _secondary_row(self, **kw):
+        return make_row(rechov_nosaf="שדרות ההדרים", mispar_bait_nosaf="7", **kw)
+
+    def _resolver(self):
+        return FakeResolver({street_house_key("249", "שדרות ההדרים", "7"): PARCEL_A})
+
+    def test_secondary_result_cached_under_secondary_address_only(self):
+        with AddressCache(":memory:") as cache:
+            row = self._secondary_row()
+            res = resolve_row(row, self._resolver(), cache=cache)
+            store_row_resolution(row, cache, True, res)
+            keys = [k for k, _ in cache.iter_row_resolutions()]
+            self.assertEqual(keys, ["secondary|249|שדרות ההדרים|7|"])
+            self.assertEqual((res.gush, res.helka), ("6355", "12"))
+
+    def test_other_row_with_same_secondary_hits_cache(self):
+        with AddressCache(":memory:") as cache:
+            row = self._secondary_row()
+            resolver = self._resolver()
+            store_row_resolution(row, cache, True, resolve_row(row, resolver, cache=cache))
+            other = self._secondary_row(rechov="רחוב אחר")  # different main address, also fails
+            resolve_row(other, resolver, cache=cache)  # primes its negative tier cache
+            hit = lookup_row_resolution(other, cache, True)
+            self.assertIsNot(hit, cache.MISS)
+            self.assertTrue(hit.used_secondary_address)
+
+    def test_secondary_entry_ignored_when_primary_not_known_to_fail(self):
+        with AddressCache(":memory:") as cache:
+            row = self._secondary_row()
+            store_row_resolution(row, cache, True, resolve_row(row, self._resolver(), cache=cache))
+            other = self._secondary_row(rechov="רחוב אחר")  # primary never tried yet
+            self.assertIs(lookup_row_resolution(other, cache, True), cache.MISS)
+
+    def test_primary_result_cached_under_primary_address_only(self):
+        with AddressCache(":memory:") as cache:
+            row = self._secondary_row()
+            resolver = FakeResolver({street_house_key("249", "דרך אפק", "5"): PARCEL_A})
+            store_row_resolution(row, cache, True, resolve_row(row, resolver, cache=cache))
+            keys = [k for k, _ in cache.iter_row_resolutions()]
+            self.assertEqual(keys, ["primary|249|דרך אפק|5|4993511"])
+
+    def test_failed_result_cached_under_full_identity(self):
+        with AddressCache(":memory:") as cache:
+            row = self._secondary_row()
+            store_row_resolution(row, cache, True, resolve_row(row, FakeResolver({}), cache=cache))
+            self.assertIsNot(lookup_row_resolution(row, cache, True), cache.MISS)
+            keys = [k for k, _ in cache.iter_row_resolutions()]
+            self.assertEqual(keys, [row_identity_key(row, True)])
 
 
 class RowIdentityKeyTests(unittest.TestCase):

@@ -36,7 +36,10 @@ Tried in this order, first success wins:
 By default (disable with `--no-secondary-address`), if all three primary-address
 tiers fail, A-C are retried on the secondary (`*_nosaf`) address before
 falling back to D/E, and every row resolved that way is flagged
-(`via_secondary_address` column + printed summary line).
+(`via_secondary_address` column + printed summary line). The cache records
+such a result under the **secondary** address alone, not the main address
+(which didn't resolve), so any other vehicle with the same secondary address
+reuses it -- provided its own main address is also known not to resolve.
 
 **Core invariant, checked on every run:** the sum of every engine-type cell
 across the whole output always equals the number of input vehicle rows.
@@ -90,7 +93,9 @@ Key flags:
   One row per distinct address in the row-level cache, with the primary
   address (`settlement_code`, `settlement_name`, `street`, `house_number`,
   `mikud`), the secondary (`*_nosaf`) address it was combined with, if any
-  (`secondary_*`), and the result (`gush`, `helka`, `sub_helka`,
+  (`secondary_*`; for a parcel found via the secondary address only the
+  `secondary_*` columns are filled and the main-address street/house/mikud
+  are blank), and the result (`gush`, `helka`, `sub_helka`,
   `match_method`, `confidence`, `is_aggregated`, `used_secondary_address`).
   Rows that failed to resolve are skipped (they hold a settlement bucket, not
   a parcel). Can be used on its own, without `--input`:
