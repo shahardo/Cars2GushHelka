@@ -68,7 +68,12 @@ cli.py          argparse entrypoint wiring the above together (two stages: resol
   in the end-to-end tests.
 - Resolvers must fail loudly (raise, e.g. `GovMapResponseError`) rather than
   guess when a response shape doesn't match what's expected -- silently
-  wrong gush/helka is worse than a crash.
+  wrong gush/helka is worse than a crash. The online resolvers' HTTP
+  helpers retry (default 4 retries, exponential backoff) on any `OSError`
+  or `http.client.HTTPException`, not just `urllib.error.URLError`:
+  urllib only wraps connect/send-phase failures in `URLError`, so a
+  `ConnectionResetError` while reading the response would otherwise skip
+  the retry loop entirely.
 - Tests are fully offline (`tests/`, run via
   `python -m unittest discover -s tests`) and use `resolvers/crosswalk.py`
   or `resolvers/fake.py`, never a live resolver.

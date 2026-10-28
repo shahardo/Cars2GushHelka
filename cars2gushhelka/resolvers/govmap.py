@@ -24,11 +24,11 @@ instead of producing quietly-wrong gush/helka values.
 
 from __future__ import annotations
 
+import http.client
 import json
 import re
 import ssl
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Optional
@@ -74,7 +74,10 @@ def _http_request_json(
             with urllib.request.urlopen(req, timeout=timeout, context=_SSL_CONTEXT) as resp:
                 body = resp.read().decode("utf-8")
             return json.loads(body)
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        # urllib only wraps connect/send-phase errors in URLError; a reset or
+        # drop while reading the response surfaces as a bare OSError
+        # (ConnectionResetError, ssl.SSLError, ...) or an HTTPException.
+        except (OSError, http.client.HTTPException, json.JSONDecodeError) as exc:
             last_exc = exc
             if attempt < retries:
                 time.sleep(backoff * (2 ** attempt))
@@ -157,7 +160,7 @@ class GovMapResolver:
         parcel_search_url: str = DEFAULT_PARCEL_SEARCH_URL,
         rate_limit_seconds: float = 0.2,
         timeout: float = 15.0,
-        retries: int = 2,
+        retries: int = 4,
         backoff: float = 1.0,
     ):
         self.search_url = search_url
